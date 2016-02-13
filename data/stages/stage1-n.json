@@ -1,0 +1,32 @@
+{
+	"enemys": [
+		{
+			"name": "enem1",
+			"position": {"x": -40, "y": 1060, "z": 80},
+			"rotation": {"y": 0.5},
+			"option": {"v": 1.2},
+			"autospawn": {},
+			"random": {}
+		},
+		{
+			"name": "enem1",
+			"position": {"x": 80, "y": 900, "z": -200},
+			"option": {"v": 0.8, "chase": 0.2, "mindist": 120},
+			"autospawn": {"rep": 1, "time": 60}
+		},
+		{
+			"name": "enem1",
+			"position": {"x": 660, "y": 820, "z": 320},
+			"rotation": {"cx": -0.005, "cy": 0.01},
+			"autospawn": {"progress": 0.5}
+		},
+		{
+			"name": "enem3",
+			"position": {"x": 300, "y": 1150, "z": 800},
+			"rotation": {"x": 0.1, "y": -0.2},
+			"autospawn": {"time": 60, "progress": 0.5}
+		}
+	],
+	"winds": [],
+	"goal": {"x": 1000, "z": 1000}
+}
