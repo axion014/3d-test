@@ -1,6 +1,7 @@
 global.js
 threeext.js
 simpleupdater.js
+directionshape.js
 loaders.js
 collision.js
 effects.js

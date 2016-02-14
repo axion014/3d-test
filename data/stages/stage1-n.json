@@ -2,31 +2,37 @@
 	"enemys": [
 		{
 			"name": "enem1",
-			"position": {"x": -40, "y": 1060, "z": 80},
+			"position": {"x": 150, "y": 940, "z": -10}
+		},
+		{
+			"name": "enem1",
+			"position": {"x": 550, "y": 1060, "z": 710},
 			"rotation": {"y": 0.5},
-			"option": {"v": 1.2},
-			"autospawn": {},
-			"random": {}
+			"option": {"v": 1},
+			"autospawn": {
+				"random": {"position": {"x": 50, "y": 50, "z": 50}},
+				"progress": 0.2
+			}
 		},
 		{
 			"name": "enem1",
-			"position": {"x": 80, "y": 900, "z": -200},
+			"position": {"x": 680, "y": 900, "z": 400},
 			"option": {"v": 0.8, "chase": 0.2, "mindist": 120},
-			"autospawn": {"rep": 1, "time": 60}
+			"autospawn": {"rep": 1, "progress": 0.4}
 		},
 		{
 			"name": "enem1",
-			"position": {"x": 660, "y": 820, "z": 320},
+			"position": {"x": 1260, "y": 820, "z": 1320},
 			"rotation": {"cx": -0.005, "cy": 0.01},
-			"autospawn": {"progress": 0.5}
+			"autospawn": {"progress": 0.6}
 		},
 		{
 			"name": "enem3",
-			"position": {"x": 300, "y": 1150, "z": 800},
+			"position": {"x": 1400, "y": 1150, "z": 1020},
 			"rotation": {"x": 0.1, "y": -0.2},
-			"autospawn": {"time": 60, "progress": 0.5}
+			"autospawn": {"progress": 0.8}
 		}
 	],
 	"winds": [],
-	"goal": {"x": 1000, "z": 1000}
+	"goal": {"x": 2000, "z": 2000}
 }

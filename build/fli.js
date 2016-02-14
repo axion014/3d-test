@@ -108,6 +108,49 @@ phina.define('nfc.SimpleUpdater', {
 	count: function(i) {return this.elements.length;}
 });
 
+
+phina.define('nfc.DirectionShape', {
+	superClass: 'phina.display.Shape',
+
+	init: function(options) {
+		options = ({}).$safe(options, {
+			backgroundColor: 'transparent',
+			fill: '#ff5050',
+			stroke: '#aaa',
+			strokeWidth: 2,
+
+			radiusshort: 16,
+			radiuslong: 32
+		});
+		this.superInit(options);
+	},
+
+	render: function(canvas) {
+		canvas.clearColor(this.backgroundColor);
+		canvas.transformCenter();
+
+		if (this.fill) {
+			canvas.context.fillStyle = this.fill;
+			canvas.beginPath();
+			canvas.moveTo(0, this.radiuslong);
+			canvas.lineTo(this.radiusshort, -this.radiuslong);
+			canvas.lineTo(-this.radiusshort, -this.radiuslong);
+			canvas.lineTo(0, this.radiuslong);
+			canvas.closePath();
+			canvas.fill();
+		}
+		if (this.stroke && 0 < this.strokeWidth) {
+			canvas.context.lineWidth = this.strokeWidth;
+			canvas.strokeStyle = this.stroke;
+			canvas.stroke();
+		}
+	},
+	_defined: function() {
+		phina.display.Shape.watchRenderProperty.call(this, 'radiusshort');
+		phina.display.Shape.watchRenderProperty.call(this, 'radiuslong');
+	}
+});
+
 phina.define('nfc.asset.ThreeJSON', {
 	superClass: 'phina.asset.Asset',
 
@@ -470,6 +513,7 @@ phina.define('nfc.EnemyManager', {
 			this.createEnemy(n, r, autospawn.time, autospawn.progress);
 			if (autospawn.delay) {autospawn.time += autospawn.delay;}
 			THREE.$add(r, autospawn.options);
+			THREE.$add(r, autospawn.random);
 		}
 	},
 
@@ -765,6 +809,7 @@ phina.define('nfc.MainScene', {
 		var enemyManager, effectManager, enmBulletManager, windManager;
 		var flyer, goal, sky, plane;
 		var map, playerpos;
+		var direction = [];
 		var gauge_h, gauge_e;
 		var speed;
 		this.load([
@@ -785,12 +830,29 @@ phina.define('nfc.MainScene', {
 				map.stroke = null;
 				map.setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 
-				playerpos = phina.display.TriangleShape().addChildTo(this);
+				playerpos = nfc.DirectionShape().addChildTo(this);
 				playerpos.fill = 'hsla(0, 50%, 70%, 0.5)';
 				playerpos.stroke = 'hsla(0, 0%, 0%, 0.5)';
 				playerpos.strokeWidth = 1;
-				playerpos.radius = 4;
+				playerpos.radiusshort = 2.5;
+				playerpos.radiuslong = 4;
 				playerpos.setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				playerpos.rotation = 180;
+
+				for(var i = 0; i < 4; i++) {
+					direction[i] = nfc.DirectionShape().addChildTo(this);
+					if (i === 0) {
+						direction[i].fill = 'hsla(0, 40%, 20%, 0.5)';
+					} else {
+						direction[i].fill = 'hsla(0, 0%, 10%, 0.5)';
+					}
+					direction[i].stroke = null;
+					direction[i].radiusshort = 12;
+					direction[i].radiuslong = 7.5;
+					direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2),
+						SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
+					direction[i].rotation = -i * 90;
+				}
 
 				gauge_h = phina.ui.Gauge({
 					fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(255, 64, 64, 0.3)',
@@ -1107,6 +1169,13 @@ phina.define('nfc.MainScene', {
 					sky.update();
 					plane.update();
 					windManager.flyerposy = flyer.position.y;
+
+					for(var i = 0; i < 4; i++) {
+						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y),
+							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y));
+						direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180;
+					}
+
 					// Camera control
 					layer.camera.quaternion.copy(new THREE.Quaternion());
 					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
@@ -1115,10 +1184,6 @@ phina.define('nfc.MainScene', {
 					var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
 					layer.camera.position.copy(flyer.position.clone().add(vec));
 					layer.camera.updateMatrixWorld();
-
-					playerpos.x = SCREEN_WIDTH - 100 + flyer.position.x / 10;
-					playerpos.y = SCREEN_HEIGHT - 100 + flyer.position.z / 10;
-					playerpos.rotation = -flyer.myrot.y / Math.PI * 180;
 
 					for (var i = 0; i < enmBulletManager.elements.length; i++) {
 						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {

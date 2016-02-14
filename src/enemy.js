@@ -42,6 +42,7 @@ phina.define('nfc.EnemyManager', {
 			this.createEnemy(n, r, autospawn.time, autospawn.progress);
 			if (autospawn.delay) {autospawn.time += autospawn.delay;}
 			THREE.$add(r, autospawn.options);
+			THREE.$add(r, autospawn.random);
 		}
 	},
 
