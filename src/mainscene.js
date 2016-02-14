@@ -243,6 +243,7 @@ phina.define('nfc.MainScene', {
 						}
 					}
 				})
+				enemyManager.flyer = flyer;
 				sky.update = function() {
 					this.move(flyer.position);
 				}
@@ -404,6 +405,7 @@ phina.define('nfc.MainScene', {
 							this.exit('gameover', {score: this.score});
 						}
 					}
+
 					this.frame++;
 				}.bind(this);
 				resolve();

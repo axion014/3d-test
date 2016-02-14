@@ -27,7 +27,7 @@ phina.define('nfc.MainSequence', {
 								expfragshader: 'data/glsl/expfragshader.min.glsl'
 							},
 							stage: {
-								s1n: 'data/stages/stage1-n.min.json'
+								tutorial: 'data/stages/tutorial.min.json'
 							}
 						}
 					}
@@ -46,7 +46,7 @@ phina.define('nfc.MainSequence', {
 					label: 'main',
 					className: 'nfc.MainScene',
 					arguments: {
-						stage: 's1n'
+						stage: 'tutorial'
 					}
 				},
 				{

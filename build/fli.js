@@ -473,7 +473,8 @@ phina.define('nfc.EnemyManager', {
 	superClass: 'nfc.SimpleUpdater',
 
 	definedenemy: [],
-	definedenemynames: [],
+	enemyraders: [],
+
 	init: function(s, ts) {
 		this.superInit();
 		this.scene = s;
@@ -485,7 +486,6 @@ phina.define('nfc.EnemyManager', {
 		this.definedenemy[n] = {mesh: phina.asset.AssetManager.get('threejson', n).get(), routine: r.$safe({
 			hp: 5, size: 1, v: 0, c: new THREE.Quaternion(), time: 0, update: function(){}
 		}), autospawn: (as || {}).$safe({rep: 1, options: {}})};
-		this.definedenemynames.push(n);
 	},
 	createEnemy: function(n, r, t, p) {
 		if(p) {
@@ -504,6 +504,14 @@ phina.define('nfc.EnemyManager', {
 			THREE.$extend(enemy, r);
 			this.threescene.add(enemy);
 			this.elements.push(enemy);
+			var rader = phina.display.CircleShape().addChildTo(this.scene);
+			rader.radius = 3;
+			rader.fill = 'hsla(0, 80%, 60%, 0.5)';
+			rader.stroke = 'hsla(0, 0%, 0%, 0.5)';
+			rader.strokeWidth = 1;
+			rader.setPosition(SCREEN_WIDTH - 100 - this.flyer.position.x / 10 + enemy.position.x / 10,
+				SCREEN_HEIGHT - 100 - this.flyer.position.z / 10 + enemy.position.z / 10);
+			this.enemyraders.push(rader);
 			return enemy;
 		}
 	},
@@ -520,6 +528,13 @@ phina.define('nfc.EnemyManager', {
 	update: function() {
 		for (var i = 0; i < this.count(); i++) {
 			this.get(i).update();
+			var xdist = this.flyer.position.x / 10 - this.get(i).position.x / 10;
+			var zdist = this.flyer.position.z / 10 - this.get(i).position.z / 10;
+			var distance = Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2));
+			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y;
+			distance = Math.min(distance, 75);
+			this.enemyraders[i].setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance,
+				SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 			if (this.get(i).hp <= 0) {
 				this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
 				this.scene.score += this.get(i).size;
@@ -532,6 +547,8 @@ phina.define('nfc.EnemyManager', {
 	remove: function(i) {
 		this.get(i).parent.remove(this.get(i));
 		this.elements.splice(i, 1);
+		this.enemyraders[i].remove();
+		this.enemyraders.splice(i, 1);
 	}
 });
 
@@ -1037,6 +1054,7 @@ phina.define('nfc.MainScene', {
 						}
 					}
 				})
+				enemyManager.flyer = flyer;
 				sky.update = function() {
 					this.move(flyer.position);
 				}
@@ -1198,6 +1216,7 @@ phina.define('nfc.MainScene', {
 							this.exit('gameover', {score: this.score});
 						}
 					}
+
 					this.frame++;
 				}.bind(this);
 				resolve();
@@ -1235,7 +1254,7 @@ phina.define('nfc.MainSequence', {
 								expfragshader: 'data/glsl/expfragshader.min.glsl'
 							},
 							stage: {
-								s1n: 'data/stages/stage1-n.min.json'
+								tutorial: 'data/stages/tutorial.min.json'
 							}
 						}
 					}
@@ -1254,7 +1273,7 @@ phina.define('nfc.MainSequence', {
 					label: 'main',
 					className: 'nfc.MainScene',
 					arguments: {
-						stage: 's1n'
+						stage: 'tutorial'
 					}
 				},
 				{

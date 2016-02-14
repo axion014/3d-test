@@ -22,15 +22,25 @@
 		},
 		{
 			"name": "enem1",
-			"position": {"x": 1260, "y": 820, "z": 1320},
-			"rotation": {"cx": -0.005, "cy": 0.01},
-			"autospawn": {"progress": 0.6}
+			"position": {"x": 1020, "y": 820, "z": 950},
+			"rotation": {"y": 2},
+			"option": {"v": 0.01},
+			"autospawn": {
+				"random": {
+					"position": {"x": 30, "y": 30, "z": 30},
+					"rotation": {"x": 0.5, "y": 3.14, "z": 3.14}
+				},
+				"progress": 0.6,
+				"delay": 5,
+				"rep": 20
+			}
 		},
 		{
 			"name": "enem3",
 			"position": {"x": 1400, "y": 1150, "z": 1020},
 			"rotation": {"x": 0.1, "y": -0.2},
-			"autospawn": {"progress": 0.8}
+			"autospawn": {"progress": 0.8},
+			"boss": true
 		}
 	],
 	"winds": [],
