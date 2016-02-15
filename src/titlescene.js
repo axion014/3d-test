@@ -1,6 +1,8 @@
 phina.define('nfc.TitleScene', {
 	superClass: 'phina.game.TitleScene',
 
+	bgbright: 64,
+
 	init: function(params) {
 		this.superInit(params);
 		this.fromJSON({
@@ -18,7 +20,15 @@ phina.define('nfc.TitleScene', {
 				}
 			}
 		});
-		this.on('pointstart', function() {this.exit();});
+		this.on('pointstart', function() {this.clicked = true;});
+	},
+
+	update: function() {
+		if (this.clicked) {
+			if (this.bgbright === 100) {this.exit();}
+			this.bgbright += 4;
+			this.backgroundColor = 'hsl(200, 80%, ' + this.bgbright + '%)';
+		}
 	}
 
 });

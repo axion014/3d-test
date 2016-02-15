@@ -8,10 +8,13 @@ phina.define('nfc.MainScene', {
 	score: 0,
 
 	init: function(options) {
-		this.superInit();
 		if (options.stage) {this.stage = options.stage;}
 		if (options.difficulty) {this.difficulty = options.difficulty;}
-		var layer;
+		this.superInit();
+		var layer = phina.display.ThreeLayer({
+			width: SCREEN_WIDTH,
+			height: SCREEN_HEIGHT,
+		}).addChildTo(this);
 		var enemyManager, effectManager, enmBulletManager, windManager;
 		var flyer, goal, sky, plane;
 		var map, playerpos;
@@ -20,15 +23,12 @@ phina.define('nfc.MainScene', {
 		var speed;
 		this.load([
 			function(resolve) { // Screen Setup
-				layer = phina.display.ThreeLayer({
-					width: SCREEN_WIDTH,
-					height: SCREEN_HEIGHT,
-				}).addChildTo(this);
 
-				var directionalLight = new THREE.DirectionalLight(0xffffff, 1); //???s????(??, ???x)
+
+				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 				directionalLight.position.set(0, 0, 30);
 				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060)); // ?????(?O???[)
+				layer.scene.add(new THREE.AmbientLight(0x606060));
 
 				map = phina.display.CircleShape().addChildTo(this);
 				map.radius = 75;
@@ -84,8 +84,8 @@ phina.define('nfc.MainScene', {
 				gauge_boss_h.animation = false;
 				gauge_boss_h.setPosition(SCREEN_CENTER_X, 20);
 
-				speed = phina.display.Label({text: 'speed: 1', fontSize: 16}).addChildTo(this);
-				speed.setPosition(50, SCREEN_HEIGHT - 20);
+				speed = phina.display.Label({text: 'speed: 1', fontSize: 16, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
+				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
 				enemyManager = nfc.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);

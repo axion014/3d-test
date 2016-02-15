@@ -685,51 +685,39 @@ phina.define('nfc.SceneLoadingScene', {
 	superClass: 'phina.display.CanvasScene',
 
 	init: function(options) {
-		options = (options || {}).$safe(nfc.SceneLoadingScene.defaults).$safe(phina.game.LoadingScene.defaults);
+		options = (options || {}).$safe(nfc.SceneLoadingScene.defaults)
 		this.superInit(options);
-		this.fromJSON({
-			children: {
-				gauge: {
-					className: 'phina.ui.Gauge',
-					arguments: {
-						value: 0,
-						width: this.width,
-						height: 12,
-						fill: '#aaa',
-						stroke: false,
-						gaugeColor: 'hsla(200, 100%, 80%, 0.8)',
-						padding: 0,
-						animationTime: options.animationtime
-					},
-					x: this.gridX.center(),
-					y: 0,
-					originY: 0,
-				}
-			}
-		});
-
-		this.gauge.onfull = function() {this.removeChild(this.gauge);}.bind(this);
+		this.options = options;
 	},
 
 	load: function(params, i) {
 		i |= 0;
+		if (i === 0) {
+			this.label = phina.display.Label({
+				text: 'Loading... ' + 0 + '%',
+				fill: 'hsla(0, 0%, 0%, 0.6)',
+				fontSize: 12,
+			});
+			this.label.setPosition({x: SCREEN_CENTER_X, y: SCREEN_CENTER_Y});
+		}
 		var flow = phina.util.Flow(params[i].bind(this));
 		flow.then(function() {
-			i++;
-			this.gauge.value = i / params.length * 100;
-			if(i < params.length) {this.load(params, i);}
+			this.label.text = 'Loading... ' + ++i / params.length * 100 + '%';
+			if(i < params.length) {this.load(params, i);} else {this.removeChild(this.label);}
 		}.bind(this));
 	},
 
 	_static: {
 		defaults: {
-			animationtime: 100
+			animationTime: 100
 		},
 	}
 });
 
 phina.define('nfc.TitleScene', {
 	superClass: 'phina.game.TitleScene',
+
+	bgbright: 64,
 
 	init: function(params) {
 		this.superInit(params);
@@ -748,7 +736,15 @@ phina.define('nfc.TitleScene', {
 				}
 			}
 		});
-		this.on('pointstart', function() {this.exit();});
+		this.on('pointstart', function() {this.clicked = true;});
+	},
+
+	update: function() {
+		if (this.clicked) {
+			if (this.bgbright === 100) {this.exit();}
+			this.bgbright += 4;
+			this.backgroundColor = 'hsl(200, 80%, ' + this.bgbright + '%)';
+		}
 	}
 
 });
@@ -822,10 +818,13 @@ phina.define('nfc.MainScene', {
 	score: 0,
 
 	init: function(options) {
-		this.superInit();
 		if (options.stage) {this.stage = options.stage;}
 		if (options.difficulty) {this.difficulty = options.difficulty;}
-		var layer;
+		this.superInit();
+		var layer = phina.display.ThreeLayer({
+			width: SCREEN_WIDTH,
+			height: SCREEN_HEIGHT,
+		}).addChildTo(this);
 		var enemyManager, effectManager, enmBulletManager, windManager;
 		var flyer, goal, sky, plane;
 		var map, playerpos;
@@ -834,15 +833,12 @@ phina.define('nfc.MainScene', {
 		var speed;
 		this.load([
 			function(resolve) { // Screen Setup
-				layer = phina.display.ThreeLayer({
-					width: SCREEN_WIDTH,
-					height: SCREEN_HEIGHT,
-				}).addChildTo(this);
 
-				var directionalLight = new THREE.DirectionalLight(0xffffff, 1); //???s????(??, ???x)
+
+				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 				directionalLight.position.set(0, 0, 30);
 				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060)); // ?????(?O???[)
+				layer.scene.add(new THREE.AmbientLight(0x606060));
 
 				map = phina.display.CircleShape().addChildTo(this);
 				map.radius = 75;
@@ -898,8 +894,8 @@ phina.define('nfc.MainScene', {
 				gauge_boss_h.animation = false;
 				gauge_boss_h.setPosition(SCREEN_CENTER_X, 20);
 
-				speed = phina.display.Label({text: 'speed: 1', fontSize: 16}).addChildTo(this);
-				speed.setPosition(50, SCREEN_HEIGHT - 20);
+				speed = phina.display.Label({text: 'speed: 1', fontSize: 16, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
+				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
 				enemyManager = nfc.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);
