@@ -25,10 +25,10 @@ phina.define('nfc.MainScene', {
 					height: SCREEN_HEIGHT,
 				}).addChildTo(this);
 
-				var directionalLight = new THREE.DirectionalLight(0xffffff, 1); //���s����(��, ���x)
+				var directionalLight = new THREE.DirectionalLight(0xffffff, 1); //???s????(??, ???x)
 				directionalLight.position.set(0, 0, 30);
 				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060)); // ����(�O���[)
+				layer.scene.add(new THREE.AmbientLight(0x606060)); // ?????(?O???[)
 
 				map = phina.display.CircleShape().addChildTo(this);
 				map.radius = 75;
@@ -385,8 +385,6 @@ phina.define('nfc.MainScene', {
 					plane.update();
 					windManager.flyerposy = flyer.position.y;
 
-					playerpos.rotation = flyer.myrot.y / Math.PI * 180;
-
 					for(var i = 0; i < 4; i++) {
 						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y),
 							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y));
@@ -403,11 +401,15 @@ phina.define('nfc.MainScene', {
 					layer.camera.updateMatrixWorld();
 
 					if (this.bosscoming) {
-						gauge_boss_h.value = boss.hp;
-						if (gauge_boss_h.alpha < 1) {
+						if (this.boss.parent === null) {
+							this.bosscoming = false;
+						} else {
+							gauge_boss_h.value = this.boss.hp;
+						}
+						if (gauge_boss_h.alpha < 0.99999) {
 							gauge_boss_h.alpha += 0.1;
 						}
-					} else if (!this.bosscoming && gauge_boss_h.alpha > 0) {
+					} else if (gauge_boss_h.alpha > 0.00001) {
 						gauge_boss_h.alpha -= 0.1;
 					}
 

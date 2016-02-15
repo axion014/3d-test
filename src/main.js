@@ -16,8 +16,8 @@ phina.define('nfc.MainSequence', {
 								bullet: 'data/models/bullet.min.json'
 							},
 							threetexture: {
-								explode: 'https://cdn.rawgit.com/axion014/3d-test/master/data/explosion.png',
-								plane: 'https://cdn.rawgit.com/axion014/3d-test/master/data/3.png'
+								explode: 'data/explosion.png',
+								plane: 'data/3.png'
 							},
 							threecubetex: {
 								skybox: 'data/skybox/ .png'
@@ -39,6 +39,7 @@ phina.define('nfc.MainSequence', {
 					arguments: {
 						title: 'flight game',
 						message: 'Click start',
+						fontColor: '#fff',
 						exitType: 'click'
 					}
 				},
