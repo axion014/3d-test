@@ -41,6 +41,10 @@ phina.define('nfc.EnemyManager', {
 			rader.setPosition(SCREEN_WIDTH - 100 - this.flyer.position.x / 10 + enemy.position.x / 10,
 				SCREEN_HEIGHT - 100 - this.flyer.position.z / 10 + enemy.position.z / 10);
 			this.enemyraders.push(rader);
+			if (r.boss) {
+				this.scene.bosscoming = true;
+				this.scene.boss = enemy;
+			}
 			return enemy;
 		}
 	},
