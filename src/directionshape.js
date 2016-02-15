@@ -35,8 +35,8 @@ phina.define('nfc.DirectionShape', {
 			canvas.stroke();
 		}
 	},
-	_defined: function() {
+	/*_defined: function() {
 		phina.display.Shape.watchRenderProperty.call(this, 'radiusshort');
 		phina.display.Shape.watchRenderProperty.call(this, 'radiuslong');
-	}
+	}*/
 });

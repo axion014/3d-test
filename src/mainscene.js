@@ -401,7 +401,7 @@ phina.define('nfc.MainScene', {
 					layer.camera.updateMatrixWorld();
 
 					if (this.bosscoming) {
-						
+						gauge_boss_h.value = boss.hp;						
 						if (gauge_boss_h.alpha < 1) {
 							gauge_boss_h.alpha += 0.1;
 						}
