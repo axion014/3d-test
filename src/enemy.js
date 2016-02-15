@@ -4,10 +4,11 @@ phina.define('nfc.EnemyManager', {
 	definedenemy: [],
 	enemyraders: [],
 
-	init: function(s, ts) {
+	init: function(s, ts, bh) {
 		this.superInit();
 		this.scene = s;
 		this.threescene = ts;
+		this.gauge_boss_h = bh;
 		this.effectmanager = new nfc.EffectManager(ts).addChildTo(this);
 	},
 
@@ -41,6 +42,12 @@ phina.define('nfc.EnemyManager', {
 			rader.setPosition(SCREEN_WIDTH - 100 - this.flyer.position.x / 10 + enemy.position.x / 10,
 				SCREEN_HEIGHT - 100 - this.flyer.position.z / 10 + enemy.position.z / 10);
 			this.enemyraders.push(rader);
+			if (r.boss) {
+				this.scene.bosscoming = true;
+				this.scene.boss = enemy;
+				this.gauge_boss_h.value = enemy.hp;
+				this.gauge_boss_h.maxValue = enemy.hp;
+			}
 			return enemy;
 		}
 	},

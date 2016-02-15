@@ -39,8 +39,8 @@
 			"name": "enem3",
 			"position": {"x": 1400, "y": 1150, "z": 1020},
 			"rotation": {"x": 0.1, "y": -0.2},
-			"autospawn": {"progress": 0.8},
-			"boss": true
+			"option": {"boss": true},
+			"autospawn": {"progress": 0.8}
 		}
 	],
 	"winds": [],

@@ -475,10 +475,11 @@ phina.define('nfc.EnemyManager', {
 	definedenemy: [],
 	enemyraders: [],
 
-	init: function(s, ts) {
+	init: function(s, ts, bh) {
 		this.superInit();
 		this.scene = s;
 		this.threescene = ts;
+		this.gauge_boss_h = bh;
 		this.effectmanager = new nfc.EffectManager(ts).addChildTo(this);
 	},
 
@@ -512,6 +513,12 @@ phina.define('nfc.EnemyManager', {
 			rader.setPosition(SCREEN_WIDTH - 100 - this.flyer.position.x / 10 + enemy.position.x / 10,
 				SCREEN_HEIGHT - 100 - this.flyer.position.z / 10 + enemy.position.z / 10);
 			this.enemyraders.push(rader);
+			if (r.boss) {
+				this.scene.bosscoming = true;
+				this.scene.boss = enemy;
+				this.gauge_boss_h.value = enemy.hp;
+				this.gauge_boss_h.maxValue = enemy.hp;
+			}
 			return enemy;
 		}
 	},
@@ -827,7 +834,7 @@ phina.define('nfc.MainScene', {
 		var flyer, goal, sky, plane;
 		var map, playerpos;
 		var direction = [];
-		var gauge_h, gauge_e;
+		var gauge_h, gauge_e, gauge_boss_h;
 		var speed;
 		this.load([
 			function(resolve) { // Screen Setup
@@ -887,11 +894,19 @@ phina.define('nfc.MainScene', {
 				gauge_e.animation = false;
 				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
 
+				gauge_boss_h = phina.ui.Gauge({
+					fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(200, 16, 16, 0.3)',
+					strokeWidth: 1, width: SCREEN_WIDTH / 1.2, height: 16
+				}).addChildTo(this);
+				gauge_boss_h.alpha = 0;
+				gauge_boss_h.animation = false;
+				gauge_boss_h.setPosition(SCREEN_CENTER_X, 20);
+
 				speed = phina.display.Label({text: 'speed: 1', fontSize: 16}).addChildTo(this);
 				speed.setPosition(50, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
-				enemyManager = nfc.EnemyManager(this, layer.scene).addChildTo(this);
+				enemyManager = nfc.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);
 				effectManager = enemyManager.effectmanager;
 				enmBulletManager = nfc.BulletManager(layer.scene).addChildTo(this);
 				windManager = nfc.WindManager(layer.scene).addChildTo(this);
@@ -1165,21 +1180,21 @@ phina.define('nfc.MainScene', {
 								position: function() {return new THREE.Vector3(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5)}
 							}});
 						}
-						if (enemyManager.count() > 50) {
-							enemyManager.remove(0);
-						}
+						this.difficulty += 0.0001;
+						if (enemyManager.count() > 50) {enemyManager.remove(0);}
+					} else {
+						this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
+						enemyManager.flare('frame', {progress: this.progress});
 					}
 					for (var i = 0; i < enemyManager.elements.length; i++) {
 						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {
 							enemyManager.remove(i);
 						}
 					}
-
-					if (this.stage !== 'arcade') {
-						this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
-						enemyManager.flare('frame', {progress: this.progress});
-					} else {
-						this.difficulty += 0.0001;
+					for (var i = 0; i < enmBulletManager.elements.length; i++) {
+						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
+							enmBulletManager.remove(i);
+						}
 					}
 
 					enemyManager.flare('frame' + this.frame);
@@ -1203,10 +1218,13 @@ phina.define('nfc.MainScene', {
 					layer.camera.position.copy(flyer.position.clone().add(vec));
 					layer.camera.updateMatrixWorld();
 
-					for (var i = 0; i < enmBulletManager.elements.length; i++) {
-						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
-							enmBulletManager.remove(i);
+					if (this.bosscoming) {
+						
+						if (gauge_boss_h.alpha < 1) {
+							gauge_boss_h.alpha += 0.1;
 						}
+					} else if (!this.bosscoming && gauge_boss_h.alpha > 0) {
+						gauge_boss_h.alpha -= 0.1;
 					}
 
 					if (flyer.hp <= 0) {
