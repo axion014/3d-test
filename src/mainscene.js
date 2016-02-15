@@ -385,6 +385,8 @@ phina.define('nfc.MainScene', {
 					plane.update();
 					windManager.flyerposy = flyer.position.y;
 
+					playerpos.rotation = flyer.myrot.y / Math.PI * 180;
+
 					for(var i = 0; i < 4; i++) {
 						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y),
 							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y));
@@ -401,7 +403,7 @@ phina.define('nfc.MainScene', {
 					layer.camera.updateMatrixWorld();
 
 					if (this.bosscoming) {
-						gauge_boss_h.value = boss.hp;						
+						gauge_boss_h.value = boss.hp;
 						if (gauge_boss_h.alpha < 1) {
 							gauge_boss_h.alpha += 0.1;
 						}
