@@ -104,18 +104,19 @@ phina.define('nfc.MainScene', {
 				flyer.transparent = true;
 				flyer.opacity = 0.3;
 				flyer.$safe({ // Player control
-					speeds: [0.15, 0.3, 0.5, 1], myrot: {x: 0, y: 0, z1: 0, z2: 0},
+					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
 					row: 0, yo: 0, v: 0, rgc: 0, brc: 0, sc: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
 					av: new THREE.Vector3(),
 					update: function(p, k, s) {
 						var c = 0;
+						this.v += 0.05;
+						c = (p.x - SCREEN_CENTER_X);
+						this.myrot.z1 += c * 0.00008;
+						this.yo += c * 0.00008;
+						this.row += (p.y - SCREEN_CENTER_Y) * this.ups;
 						if (p.getPointing()) {
 							this.e--;
 							this.v += this.speeds[this.speed];
-							c = (p.x - SCREEN_CENTER_X);
-							this.myrot.z1 += c * 0.00008;
-							this.yo += c * 0.00008;
-							this.row += (p.y - SCREEN_CENTER_Y) * this.ups;
 						}
 						if (k.getKeyDown(67)) {
 							this.speed++;
