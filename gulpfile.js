@@ -31,21 +31,20 @@ gulp.task('compile', function() {
 	}
 	gulp.src(scripts)
 	.pipe(plumber())
-	.pipe(concat('fli.js'))
+	.pipe(concat('flygame.js'))
 	.pipe(gulp.dest('./build/'))
-	
+
 	gulp.src(scripts)
 	.pipe(plumber())
 	.pipe(uglify())
-	.pipe(concat('fli.js'))
-	.pipe(rename({extname: '.min.js'}))
+	.pipe(concat('flygame.min.js'))
 	.pipe(gulp.dest('./build/'));
 })
 gulp.task('jsonminify', function() {
-	del(['data/**/*.min.json']).then(function() {
-		gulp.src(['data/**/*.json'])
-		.pipe(jsonminify())
-		.pipe(rename({extname: '.min.json'}))
-		.pipe(gulp.dest('./data/'));
-	});
+	del.sync(['data/**/*.min.json']);
+	gulp.src(['data/**/*.json'])
+	.pipe(jsonminify())
+	.pipe(rename({extname: '.min.json'}))
+	.pipe(gulp.dest('./data/'));
+	console.log('ok');
 });
