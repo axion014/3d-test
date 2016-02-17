@@ -385,9 +385,10 @@ phina.define('nfc.MainScene', {
 					windManager.flyerposy = flyer.position.y;
 
 					for(var i = 0; i < 4; i++) {
-						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y),
-							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y));
-						direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180;
+						var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
+						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
+							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
+						direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
 					}
 
 					// Camera control

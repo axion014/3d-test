@@ -72,7 +72,7 @@ phina.define('nfc.EnemyManager', {
 			var xdist = this.flyer.position.x / 10 - this.get(i).position.x / 10;
 			var zdist = this.flyer.position.z / 10 - this.get(i).position.z / 10;
 			var distance = Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2));
-			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y;
+			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y + (Math.abs(this.flyer.myrot.x) > Math.PI / 2 && Math.abs(this.flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 			distance = Math.min(distance, 75);
 			this.enemyraders[i].setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance,
 				SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
