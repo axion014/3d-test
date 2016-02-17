@@ -140,7 +140,8 @@ phina.define('nfc.asset.Stage', {
 				});
 				stage.enemys[i].position.$safe({x: 0, y: 0, z: 0});
 				stage.enemys[i].rotation.$safe({x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0});
-				stage.enemys[i].autospawn.$safe({time: 0, progress: 0});
+				stage.enemys[i].autospawn.$safe({time: 0, progress: 0, random: {}});
+				stage.enemys[i].autospawn.random.$safe({x: 0, y: 0, z: 0});
 				stage.enemys[i].option.$safe({
 					position: new THREE.Vector3(stage.enemys[i].position.x, stage.enemys[i].position.y, stage.enemys[i].position.z),
 					quaternion: new THREE.Quaternion().rotate(stage.enemys[i].rotation.x, stage.enemys[i].rotation.y, stage.enemys[i].rotation.z),

@@ -359,9 +359,7 @@ phina.define('nfc.MainScene', {
 							enemyManager.createEnemyMulti(enmname, {
 								position: new THREE.Vector3(Math.randint(-500, 500), Math.randint(500, 5000), Math.randint(-500, 500)).add(flyer.position),
 								quaternion: new THREE.Quaternion().rotate(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2)
-							}, {options: {
-								position: function() {return new THREE.Vector3(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5)}
-							}});
+							}, {random: {x: 5, y: 5, z: 5}});
 						}
 						this.difficulty += 0.0001;
 						if (enemyManager.count() > 50) {enemyManager.remove(0);}

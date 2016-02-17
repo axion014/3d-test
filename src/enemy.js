@@ -27,7 +27,7 @@ phina.define('nfc.EnemyManager', {
 			}.bind(this);
 			this.on('frame', callfunc);
 		} else if (t) {
-			this.on('frame' + t, function() {this.createEnemy(n, r);}.bind(this));
+			this.on('frame' + (this.scene.frame + t), function() {this.createEnemy(n, r);}.bind(this));
 		} else {
 			var enemy = this.definedenemy[n].mesh.clone();
 			THREE.$extend(enemy, this.definedenemy[n].routine);
@@ -54,10 +54,15 @@ phina.define('nfc.EnemyManager', {
 	createEnemyMulti: function(n, r, as) {
 		var autospawn = as.$safe(this.definedenemy[n].autospawn);
 		for(var i = 0; i < autospawn.rep; i++) {
-			this.createEnemy(n, r, autospawn.time, autospawn.progress);
+			var nr = {position: new THREE.Vector3()};
+			THREE.$extend(nr, r);
+			this.createEnemy(n, nr, autospawn.time, autospawn.progress);
 			if (autospawn.delay) {autospawn.time += autospawn.delay;}
 			THREE.$add(r, autospawn.options);
-			THREE.$add(r, autospawn.random);
+			r.position.add(new THREE.Vector3(
+				Math.random() * autospawn.random.x * 2 - autospawn.random.x,
+				Math.random() * autospawn.random.y * 2 - autospawn.random.y,
+				Math.random() * autospawn.random.z * 2 - autospawn.random.z));
 		}
 	},
 
