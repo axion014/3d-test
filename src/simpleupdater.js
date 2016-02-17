@@ -1,4 +1,4 @@
-phina.define('nfc.SimpleUpdater', {
+phina.define('fly.SimpleUpdater', {
 	superClass: 'phina.app.Element',
 
 	init: function() {

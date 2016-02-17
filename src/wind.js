@@ -1,5 +1,5 @@
-phina.define('nfc.WindManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.WindManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	time: 0, flyerposy: 0,
 

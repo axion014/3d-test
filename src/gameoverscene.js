@@ -1,4 +1,4 @@
-phina.define('nfc.GameOverScene', {
+phina.define('fly.GameOverScene', {
 	superClass: 'phina.display.CanvasScene',
 
 	init: function(params) {

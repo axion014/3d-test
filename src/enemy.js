@@ -1,5 +1,5 @@
-phina.define('nfc.EnemyManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.EnemyManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	definedenemy: [],
 	enemyraders: [],
@@ -9,7 +9,7 @@ phina.define('nfc.EnemyManager', {
 		this.scene = s;
 		this.threescene = ts;
 		this.gauge_boss_h = bh;
-		this.effectmanager = new nfc.EffectManager(ts).addChildTo(this);
+		this.effectmanager = new fly.EffectManager(ts).addChildTo(this);
 	},
 
 	defineEnemy: function(n, r, as) {

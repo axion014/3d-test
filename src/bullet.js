@@ -1,5 +1,5 @@
-phina.define('nfc.BulletManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.BulletManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	init: function(ts) {
 		this.superInit();

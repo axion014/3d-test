@@ -1,4 +1,4 @@
-nfc.colCup2D3 = function(p1, p2, v1, v2, r) {
+fly.colCup2D3 = function(p1, p2, v1, v2, r) {
 	var t = p2.clone().sub(p1);
 	var la = v2.clone().multiplyScalar(v1.clone().dot(v2) / v2.clone().dot(v2)).sub(v1);
 	var la2 = la.clone().dot(la);

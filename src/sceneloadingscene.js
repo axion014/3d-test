@@ -1,8 +1,8 @@
-phina.define('nfc.SceneLoadingScene', {
+phina.define('fly.SceneLoadingScene', {
 	superClass: 'phina.display.CanvasScene',
 
 	init: function(options) {
-		options = (options || {}).$safe(nfc.SceneLoadingScene.defaults)
+		options = (options || {}).$safe(fly.SceneLoadingScene.defaults)
 		this.superInit(options);
 		this.options = options;
 	},

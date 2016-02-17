@@ -1,5 +1,5 @@
-phina.define('nfc.MainScene', {
-	superClass: 'nfc.SceneLoadingScene',
+phina.define('fly.MainScene', {
+	superClass: 'fly.SceneLoadingScene',
 
 	frame: 0,
 	stage: 'arcade',
@@ -24,7 +24,6 @@ phina.define('nfc.MainScene', {
 		this.load([
 			function(resolve) { // Screen Setup
 
-
 				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 				directionalLight.position.set(0, 0, 30);
 				layer.scene.add(directionalLight);
@@ -36,7 +35,7 @@ phina.define('nfc.MainScene', {
 				map.stroke = null;
 				map.setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 
-				playerpos = nfc.DirectionShape().addChildTo(this);
+				playerpos = fly.DirectionShape().addChildTo(this);
 				playerpos.fill = 'hsla(0, 50%, 70%, 0.5)';
 				playerpos.stroke = 'hsla(0, 0%, 0%, 0.5)';
 				playerpos.strokeWidth = 1;
@@ -46,7 +45,7 @@ phina.define('nfc.MainScene', {
 				playerpos.rotation = 180;
 
 				for(var i = 0; i < 4; i++) {
-					direction[i] = nfc.DirectionShape().addChildTo(this);
+					direction[i] = fly.DirectionShape().addChildTo(this);
 					if (i === 0) {
 						direction[i].fill = 'hsla(0, 40%, 20%, 0.5)';
 					} else {
@@ -88,10 +87,10 @@ phina.define('nfc.MainScene', {
 				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
-				enemyManager = nfc.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);
+				enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);
 				effectManager = enemyManager.effectmanager;
-				enmBulletManager = nfc.BulletManager(layer.scene).addChildTo(this);
-				windManager = nfc.WindManager(layer.scene).addChildTo(this);
+				enmBulletManager = fly.BulletManager(layer.scene).addChildTo(this);
+				windManager = fly.WindManager(layer.scene).addChildTo(this);
 				resolve();
 			}, function(resolve) { // Load Players
 				flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
@@ -204,7 +203,7 @@ phina.define('nfc.MainScene', {
 							var v2 = Axis.z.clone().applyQuaternion(enmBulletManager.get(i).quaternion).setLength(enmBulletManager.get(i).size);
 							var p1 = this.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 							var p2 = enmBulletManager.get(i).position.clone().sub(v2.clone().multiplyScalar(-0.5));
-							if (nfc.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
+							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
 								enmBulletManager.remove(i);
@@ -215,7 +214,7 @@ phina.define('nfc.MainScene', {
 							var v2 = Axis.z.clone().applyQuaternion(enemyManager.get(i).quaternion).setLength(enemyManager.get(i).size);
 							var p1 = this.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 							var p2 = enemyManager.get(i).position.clone().sub(v2.clone().multiplyScalar(-0.5));
-							if (nfc.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
+							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
 								enemyManager.remove(i);

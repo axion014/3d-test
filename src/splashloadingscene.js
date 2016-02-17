@@ -1,4 +1,4 @@
-phina.define('nfc.SplashLoadingScene', {
+phina.define('fly.SplashLoadingScene', {
 	superClass: 'phina.display.CanvasScene',
 
 	init: function(options) {

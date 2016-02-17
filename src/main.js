@@ -1,10 +1,10 @@
-phina.define('nfc.MainSequence', {
+phina.define('fly.MainSequence', {
 	superClass: 'phina.game.ManagerScene',
 	init: function() {
 		this.superInit({
 			scenes: [
 				{
-					className: 'nfc.LoadingScene',
+					className: 'fly.LoadingScene',
 					arguments: {
 						lie: false,
 						assets: {
@@ -35,7 +35,7 @@ phina.define('nfc.MainSequence', {
 
 				{
 					label: 'title',
-					className: 'nfc.TitleScene',
+					className: 'fly.TitleScene',
 					arguments: {
 						title: 'flight game',
 						message: 'Click start',
@@ -45,21 +45,21 @@ phina.define('nfc.MainSequence', {
 				},
 				{
 					label: 'main',
-					className: 'nfc.MainScene',
+					className: 'fly.MainScene',
 					arguments: {
 						stage: 'tutorial'
 					}
 				},
 				{
 					label: 'gameover',
-					className: 'nfc.GameOverScene'
+					className: 'fly.GameOverScene'
 				}
 			],
 		});
 	}
 });
 
-phina.define('nfc.Application', {
+phina.define('fly.Application', {
 	superClass: 'phina.display.CanvasApp',
 	init: function() {
 		this.superInit({
@@ -67,11 +67,11 @@ phina.define('nfc.Application', {
 			height: SCREEN_HEIGHT,
 		});
 		threeext.extention();
-		this.replaceScene(nfc.MainSequence());
+		this.replaceScene(fly.MainSequence());
 	},
 });
 
 phina.main(function() {
-	var app = nfc.Application();
+	var app = fly.Application();
 	app.run();
 });

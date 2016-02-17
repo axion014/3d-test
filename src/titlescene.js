@@ -1,4 +1,4 @@
-phina.define('nfc.TitleScene', {
+phina.define('fly.TitleScene', {
 	superClass: 'phina.game.TitleScene',
 
 	bgbright: 64,

@@ -1,10 +1,10 @@
-phina.define('nfc.EffectManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.EffectManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	init: function(ts) {
 		this.superInit();
-		this.explodeManager = nfc.ExplodeManager(ts).addChildTo(this);
-		this.rayManager = nfc.RayManager(ts).addChildTo(this);
+		this.explodeManager = fly.ExplodeManager(ts).addChildTo(this);
+		this.rayManager = fly.RayManager(ts).addChildTo(this);
 		this.threescene = ts;
 	},
 
@@ -12,8 +12,8 @@ phina.define('nfc.EffectManager', {
 	ray: function(g, c, o, w, mw, t) {return this.rayManager.ray(g, c, o, w, mw, t);},
 });
 
-phina.define('nfc.ExplodeManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.ExplodeManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	init: function(ts) {
 		this.superInit();
@@ -59,8 +59,8 @@ phina.define('nfc.ExplodeManager', {
 	}
 });
 
-phina.define('nfc.RayManager', {
-	superClass: 'nfc.SimpleUpdater',
+phina.define('fly.RayManager', {
+	superClass: 'fly.SimpleUpdater',
 
 	init: function(ts) {
 		this.superInit();

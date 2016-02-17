@@ -1,5 +1,5 @@
 
-phina.define('nfc.DirectionShape', {
+phina.define('fly.DirectionShape', {
 	superClass: 'phina.display.Shape',
 
 	init: function(options) {

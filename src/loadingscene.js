@@ -1,8 +1,8 @@
-phina.define('nfc.LoadingScene', {
+phina.define('fly.LoadingScene', {
 	superClass: 'phina.game.LoadingScene',
 
 	init: function(options) {
-		options = (options || {}).$safe(nfc.LoadingScene.defaults).$safe(phina.game.LoadingScene.defaults);
+		options = (options || {}).$safe(fly.LoadingScene.defaults).$safe(phina.game.LoadingScene.defaults);
 		this.superInit(options);
 		this.gauge.animationTime = options.animationtime;
 	},

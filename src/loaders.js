@@ -1,4 +1,4 @@
-phina.define('nfc.asset.ThreeJSON', {
+phina.define('fly.asset.ThreeJSON', {
 	superClass: 'phina.asset.Asset',
 
 	data: null,
@@ -15,7 +15,7 @@ phina.define('nfc.asset.ThreeJSON', {
 	get: function() {return this.data.clone();}
 });
 
-phina.define('nfc.asset.ThreeTexture', {
+phina.define('fly.asset.ThreeTexture', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: null,
@@ -37,7 +37,7 @@ phina.define('nfc.asset.ThreeTexture', {
 	}
 });
 
-phina.define('nfc.asset.ThreeCubeTex', {
+phina.define('fly.asset.ThreeCubeTex', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: null,
@@ -65,7 +65,7 @@ phina.define('nfc.asset.ThreeCubeTex', {
 	get: function() {return this._asset.clone();}
 });
 
-phina.define('nfc.asset.Text', {
+phina.define('fly.asset.Text', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: null,
@@ -103,7 +103,7 @@ phina.define('nfc.asset.Text', {
 	get: function() {return this._asset;}
 });
 
-phina.define('nfc.asset.JSON', {
+phina.define('fly.asset.JSON', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: {},
@@ -112,7 +112,7 @@ phina.define('nfc.asset.JSON', {
 
 	_load: function(resolve) {
 		var self = this;
-		var json = nfc.asset.Text();
+		var json = fly.asset.Text();
 		json.load(this.src).then(function() {
 			this._asset = JSON.parse(json.get());
 			resolve(self);
@@ -122,7 +122,7 @@ phina.define('nfc.asset.JSON', {
 	get: function() {return this._asset;}
 });
 
-phina.define('nfc.asset.Stage', {
+phina.define('fly.asset.Stage', {
 	superClass: 'phina.asset.Asset',
 
 	data: [],
@@ -131,7 +131,7 @@ phina.define('nfc.asset.Stage', {
 
 	_load: function(resolve) {
 		var self = this;
-		var json = nfc.asset.JSON();
+		var json = fly.asset.JSON();
 		json.load(this.src).then(function() {
 			var stage = json.get();
 			for(var i = 0; i < stage.enemys.length; i++) {
@@ -163,37 +163,37 @@ phina.define('nfc.asset.Stage', {
 });
 
 phina.asset.AssetLoader.assetLoadFunctions.threejson = function(key, path) {
-	var asset = nfc.asset.ThreeJSON();
+	var asset = fly.asset.ThreeJSON();
 	var flow = asset.load(path);
 	return flow;
 };
 
 phina.asset.AssetLoader.assetLoadFunctions.threetexture = function(key, path) {
-	var asset = nfc.asset.ThreeTexture();
+	var asset = fly.asset.ThreeTexture();
 	var flow = asset.load(path);
 	return flow;
 };
 
 phina.asset.AssetLoader.assetLoadFunctions.threecubetex = function(key, path) {
-	var asset = nfc.asset.ThreeCubeTex();
+	var asset = fly.asset.ThreeCubeTex();
 	var flow = asset.load(path);
 	return flow;
 };
 
 phina.asset.AssetLoader.assetLoadFunctions.text = function(key, path) {
-	var asset = nfc.asset.Text();
+	var asset = fly.asset.Text();
 	var flow = asset.load(path);
 	return flow;
 };
 
 phina.asset.AssetLoader.assetLoadFunctions.json = function(key, path) {
-	var asset = nfc.asset.JSON();
+	var asset = fly.asset.JSON();
 	var flow = asset.load(path);
 	return flow;
 };
 
 phina.asset.AssetLoader.assetLoadFunctions.stage = function(key, path) {
-	var asset = nfc.asset.Stage();
+	var asset = fly.asset.Stage();
 	var flow = asset.load(path);
 	return flow;
 };
