@@ -7,9 +7,9 @@ var plumber = require('gulp-plumber');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
 var webserver = require("gulp-webserver");
-gulp.task('default', ['compile']);
-gulp.task('watch', ['compile'], function() {
-	gulp.watch(['src/**/*'], ['compile']);
+gulp.task('default', ['test']);
+gulp.task('watch', ['test'], function() {
+	gulp.watch(['src/**/*'], ['test']);
 });
 gulp.task('live', ['watch'], function() {
 	gulp.src('.')
@@ -24,20 +24,26 @@ gulp.task('open', function() {
 	.pipe(plumber())
 	.pipe(webserver({open: true, livereload: {enable: true, filter: function(filename) {return false;}}}))
 });
-gulp.task('compile', function() {
+gulp.task('test', function() {
 	var scripts = fs.readFileSync('src/config.txt').toString().split('\n');
-	for ( var i = 0; i < scripts.length; ++i ) {
-		scripts[i] = 'src/' + scripts[i];
-	}
+	for ( var i = 0; i < scripts.length; ++i ) {scripts[i] = 'src/' + scripts[i];}
+	gulp.src(scripts)
+	.pipe(plumber())
+	.pipe(concat('flygame.js'))
+	.pipe(gulp.dest('./test/'))
+	.pipe(uglify())
+	.pipe(rename({extname: '.min.js'}))
+	.pipe(gulp.dest('./test/'));
+})
+gulp.task('build', function() {
+	var scripts = fs.readFileSync('src/config.txt').toString().split('\n');
+	for ( var i = 0; i < scripts.length; ++i ) {scripts[i] = 'src/' + scripts[i];}
 	gulp.src(scripts)
 	.pipe(plumber())
 	.pipe(concat('flygame.js'))
 	.pipe(gulp.dest('./build/'))
-
-	gulp.src(scripts)
-	.pipe(plumber())
 	.pipe(uglify())
-	.pipe(concat('flygame.min.js'))
+	.pipe(rename({extname: '.min.js'}))
 	.pipe(gulp.dest('./build/'));
 })
 gulp.task('jsonminify', function() {
@@ -46,5 +52,4 @@ gulp.task('jsonminify', function() {
 	.pipe(jsonminify())
 	.pipe(rename({extname: '.min.json'}))
 	.pipe(gulp.dest('./data/'));
-	console.log('ok');
 });
