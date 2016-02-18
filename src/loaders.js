@@ -134,6 +134,7 @@ phina.define('fly.asset.Stage', {
 		var json = fly.asset.JSON();
 		json.load(this.src).then(function() {
 			var stage = json.get();
+			stage.$safe({enemys: [], winds: [], messages: [], goal: {}});
 			for(var i = 0; i < stage.enemys.length; i++) {
 				stage.enemys[i].$safe({
 					position: {}, rotation: {}, option: {}, autospawn: {}, random: {}

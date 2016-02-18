@@ -20,6 +20,7 @@ phina.define('fly.MainScene', {
 		var map, playerpos;
 		var direction = [];
 		var gauge_h, gauge_e, gauge_boss_h;
+		var msgbox, message;
 		var speed;
 		this.load([
 			function(resolve) { // Screen Setup
@@ -83,7 +84,18 @@ phina.define('fly.MainScene', {
 				gauge_boss_h.animation = false;
 				gauge_boss_h.setPosition(SCREEN_CENTER_X, 20);
 
-				speed = phina.display.Label({text: 'speed: 1', fontSize: 16, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
+				msgbox = phina.display.RectangleShape({
+					fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)',
+					strokeWidth: 1, cornerRadius: 5,
+					width: SCREEN_WIDTH / 1.2, height: SCREEN_HEIGHT / 4
+				}).addChildTo(this);
+				msgbox.live = 0;
+				msgbox.setPosition(-SCREEN_WIDTH / 3, SCREEN_HEIGHT * 1.1);
+
+				message = phina.display.Label({text: '', fontSize: 32, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'}).addChildTo(this);
+				message.setPosition(-SCREEN_WIDTH / 3, SCREEN_HEIGHT * 1.1);
+
+				speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
 				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
@@ -337,6 +349,12 @@ phina.define('fly.MainScene', {
 					for(var i = 0; i < stage.winds.length; i++) {
 						windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
 					}
+					for(var i = 0; i < stage.messages.length; i++) {
+						var tmp = i;
+						this.on('frame' + stage.messages[i].time, function() {
+							message.text = stage.messages[tmp].text;
+						}.bind(this));
+					}
 					goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), new THREE.Material());
 					goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
 				}
@@ -377,6 +395,7 @@ phina.define('fly.MainScene', {
 						}
 					}
 
+					this.flare('frame' + this.frame);
 					enemyManager.flare('frame' + this.frame);
 					flyer.update(p, k, this);
 					sky.update();
@@ -410,6 +429,19 @@ phina.define('fly.MainScene', {
 						}
 					} else if (gauge_boss_h.alpha > 0.00001) {
 						gauge_boss_h.alpha -= 0.1;
+					}
+
+					if (k.getKeyDown(13)) {message.text = '';}
+					if (message.text !== '') {
+						if (msgbox.live < 0.99999) {
+							msgbox.live += 0.5;
+							msgbox.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 1.66 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
+							message.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X  * 0.9 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
+						}
+					} else if (msgbox.live > 0.00001) {
+						msgbox.live -= 0.5;
+						msgbox.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 1.66 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
+						message.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 0.9 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
 					}
 
 					if (flyer.hp <= 0) {
