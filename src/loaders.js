@@ -137,12 +137,13 @@ phina.define('fly.asset.Stage', {
 			stage.$safe({enemys: [], winds: [], messages: [], goal: {}});
 			for(var i = 0; i < stage.enemys.length; i++) {
 				stage.enemys[i].$safe({
-					position: {}, rotation: {}, option: {}, autospawn: {}, random: {}
+					position: {}, rotation: {}, option: {}, autospawn: {}, random: {}, killmes: {}
 				});
 				stage.enemys[i].position.$safe({x: 0, y: 0, z: 0});
 				stage.enemys[i].rotation.$safe({x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0});
 				stage.enemys[i].autospawn.$safe({time: 0, progress: 0, random: {}});
 				stage.enemys[i].autospawn.random.$safe({x: 0, y: 0, z: 0});
+				stage.enemys[i].killmes.$safe({time: 0, text: ''});
 				stage.enemys[i].option.$safe({
 					position: new THREE.Vector3(stage.enemys[i].position.x, stage.enemys[i].position.y, stage.enemys[i].position.z),
 					quaternion: new THREE.Quaternion().rotate(stage.enemys[i].rotation.x, stage.enemys[i].rotation.y, stage.enemys[i].rotation.z),
@@ -154,6 +155,7 @@ phina.define('fly.asset.Stage', {
 				stage.winds[i].position = new THREE.Vector2(stage.winds[i].x, stage.winds[i].y);
 				stage.winds[i].c = stage.winds[i].color[0] << 16 | stage.winds[i].color[1] << 8 | stage.winds[i].color[2];
 			}
+			for(var i = 0; i < stage.messages.length; i++) {stage.messages[i].$safe({time: 0, text: ''});}
 			stage.goal.$safe({x: 0, y: 0, z: 0, size: 100})
 			this.data = stage;
 			resolve(self);

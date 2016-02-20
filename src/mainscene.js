@@ -87,19 +87,19 @@ phina.define('fly.MainScene', {
 				msgbox = phina.display.RectangleShape({
 					fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)',
 					strokeWidth: 1, cornerRadius: 5,
-					width: SCREEN_WIDTH / 1.2, height: SCREEN_HEIGHT / 4
+					width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12
 				}).addChildTo(this);
 				msgbox.live = 0;
-				msgbox.setPosition(-SCREEN_WIDTH / 3, SCREEN_HEIGHT * 1.1);
+				msgbox.setPosition(0, SCREEN_HEIGHT);
 
 				message = phina.display.Label({text: '', fontSize: 32, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'}).addChildTo(this);
-				message.setPosition(-SCREEN_WIDTH / 3, SCREEN_HEIGHT * 1.1);
+				message.setPosition(0, SCREEN_HEIGHT);
 
 				speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
 				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 				resolve();
 			}, function(resolve) { // Managers Setup
-				enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h).addChildTo(this);
+				enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message).addChildTo(this);
 				effectManager = enemyManager.effectmanager;
 				enmBulletManager = fly.BulletManager(layer.scene).addChildTo(this);
 				windManager = fly.WindManager(layer.scene).addChildTo(this);
@@ -129,7 +129,7 @@ phina.define('fly.MainScene', {
 							this.e--;
 							this.v += this.speeds[this.speed];
 						}
-						if (k.getKeyDown(67)) {
+						if (k.getKeyDown(68)) {
 							this.speed++;
 							this.speed %= 4;
 							speed.text = 'speed: ' + (this.speed + 1);
@@ -146,7 +146,9 @@ phina.define('fly.MainScene', {
 						this.av.multiplyScalar(0.98);
 
 						this.myrot.z1 *= 0.95;
-						if (k.getKey(16) || Math.abs(this.myrot.x) < Math.PI / 2 || Math.abs(this.myrot.x) > Math.PI * 1.5) {
+						this.locked = k.getKey(16);
+						if (k.getKeyDown(16)) {this.lock = Math.abs(this.myrot.x) < Math.PI / 2 || Math.abs(this.myrot.x) > Math.PI * 1.5;}
+						if (this.locked ? this.lock : (Math.abs(this.myrot.x) < Math.PI / 2 || Math.abs(this.myrot.x) > Math.PI * 1.5)) {
 							if (this.ups < 0.00015) {this.ups += 0.00001;}
 							this.myrot.z2 *= 0.95;
 						} else {
@@ -155,10 +157,10 @@ phina.define('fly.MainScene', {
 						}
 						this.yo *= 0.95;
 						this.row *= 0.9;
-						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(66) ? 0.05 : 0);
+						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
 
 						if (this.e > 0) {
-							if (k.getKey(32) && this.sc === 0) {
+							if (k.getKey(90) && this.sc === 0) {
 								this.e -= 2;
 								var rnd1 = this.quaternion.clone();
 								rnd1.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.random() * 0.06 - 0.03));
@@ -169,7 +171,7 @@ phina.define('fly.MainScene', {
 								this.attack(rnd1, s);
 								this.attack(rnd2, s);
 							}
-							if (k.getKeyDown(65) && this.rgc === 0 && this.e >= 250) {
+							if (k.getKeyDown(88) && this.rgc === 0 && this.e >= 250) {
 								this.rgc = 20;
 								this.rgl = 2;
 								this.e -= 250;
@@ -181,7 +183,7 @@ phina.define('fly.MainScene', {
 								this.rgl--;
 								this.beam(30, 2, 15, 0, s);
 							}
-							if (k.getKeyDown(83) && this.brc === 0 && this.e >= 700) {
+							if (k.getKeyDown(67) && this.brc === 0 && this.e >= 700) {
 								this.brc = 250;
 								this.brl = 17;
 								this.rgc = 80;
@@ -344,16 +346,15 @@ phina.define('fly.MainScene', {
 				if (this.stage !== 'arcade') {
 					var stage = phina.asset.AssetManager.get('stage', this.stage).get();
 					for(var i = 0; i < stage.enemys.length; i++) {
-						enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn);
+						enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn, stage.enemys[i].killmes);
 					}
 					for(var i = 0; i < stage.winds.length; i++) {
 						windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
 					}
 					for(var i = 0; i < stage.messages.length; i++) {
 						var tmp = i;
-						this.on('frame' + stage.messages[i].time, function() {
-							message.text = stage.messages[tmp].text;
-						}.bind(this));
+						this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
+						this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
 					}
 					goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), new THREE.Material());
 					goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
@@ -431,17 +432,21 @@ phina.define('fly.MainScene', {
 						gauge_boss_h.alpha -= 0.1;
 					}
 
-					if (k.getKeyDown(13)) {message.text = '';}
+					if (k.getKeyDown(32)) {message.text = '';}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
 							msgbox.live += 0.5;
-							msgbox.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 1.66 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
-							message.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X  * 0.9 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
+							msgbox.setPosition(SCREEN_CENTER_X * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
+							msgbox.width = SCREEN_WIDTH / 10 + SCREEN_WIDTH / 1.3 * msgbox.live;
+							msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 8 * msgbox.live;
+							message.setPosition(SCREEN_CENTER_X  * 0.25 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 						}
 					} else if (msgbox.live > 0.00001) {
 						msgbox.live -= 0.5;
-						msgbox.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 1.66 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
-						message.setPosition(-SCREEN_WIDTH / 3 + SCREEN_CENTER_X * 0.9 * msgbox.live, SCREEN_HEIGHT * 1.1 - SCREEN_CENTER_Y * 0.5 * msgbox.live);
+						msgbox.setPosition(SCREEN_CENTER_X * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
+						msgbox.width = SCREEN_WIDTH / 10 + SCREEN_WIDTH / 1.3 * msgbox.live;
+						msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 5 * msgbox.live;
+						message.setPosition(SCREEN_CENTER_X * 0.25 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
 
 					if (flyer.hp <= 0) {
