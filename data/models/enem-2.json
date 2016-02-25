@@ -19,7 +19,7 @@
         "transparent": false,
         "vertexColors": false,
         "DbgName": "palette",
-        "mapDiffuse": "fighter-2.png",
+        "mapDiffuse": "enem-2.png",
         "mapDiffuseAnisotropy": 1,
         "specularCoef": 50,
         "colorSpecular": [0,0,0],

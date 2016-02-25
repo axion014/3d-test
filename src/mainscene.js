@@ -11,106 +11,38 @@ phina.define('fly.MainScene', {
 		if (options.stage) {this.stage = options.stage;}
 		if (options.difficulty) {this.difficulty = options.difficulty;}
 		this.superInit();
-		var layer = phina.display.ThreeLayer({
-			width: SCREEN_WIDTH,
-			height: SCREEN_HEIGHT,
-		}).addChildTo(this);
-		var enemyManager, effectManager, enmBulletManager, windManager;
-		var flyer, goal, sky, plane;
-		var map, playerpos;
+		// Variables
+		var layer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+
+		var map = phina.display.CircleShape({radius: 75, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: null});
+		var playerpos = fly.DirectionShape({
+			fill: 'hsla(0, 50%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1, width: 2.5, height: 4
+		});
 		var direction = [];
-		var gauge_h, gauge_e, gauge_boss_h;
-		var msgbox, message;
-		var speed;
-		this.load([
-			function(resolve) { // Screen Setup
 
-				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-				directionalLight.position.set(0, 0, 30);
-				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060));
+		var gauge_h = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(255, 64, 64, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
+		var gauge_e = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(64, 64, 255, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
+		var gauge_boss_h = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(200, 16, 16, 0.3)', strokeWidth: 1, width: SCREEN_WIDTH / 1.2, height: 16});
 
-				map = phina.display.CircleShape().addChildTo(this);
-				map.radius = 75;
-				map.fill = 'hsla(0, 0%, 30%, 0.5)';
-				map.stroke = null;
-				map.setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+		var msgbox = phina.display.RectangleShape({
+			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
+		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
+		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
 
-				playerpos = fly.DirectionShape().addChildTo(this);
-				playerpos.fill = 'hsla(0, 50%, 70%, 0.5)';
-				playerpos.stroke = 'hsla(0, 0%, 0%, 0.5)';
-				playerpos.strokeWidth = 1;
-				playerpos.radiusshort = 2.5;
-				playerpos.radiuslong = 4;
-				playerpos.setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
-				playerpos.rotation = 180;
+		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
+		var effectManager = enemyManager.effectmanager;
+		var enmBulletManager = fly.BulletManager(layer.scene);
+		enemyManager.enmBulletManager = enmBulletManager;
+		var windManager = fly.WindManager(layer.scene);
 
-				for(var i = 0; i < 4; i++) {
-					direction[i] = fly.DirectionShape().addChildTo(this);
-					if (i === 0) {
-						direction[i].fill = 'hsla(0, 40%, 20%, 0.5)';
-					} else {
-						direction[i].fill = 'hsla(0, 0%, 10%, 0.5)';
-					}
-					direction[i].stroke = null;
-					direction[i].radiusshort = 12;
-					direction[i].radiuslong = 7.5;
-					direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2),
-						SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
-					direction[i].rotation = -i * 90;
-				}
-
-				gauge_h = phina.ui.Gauge({
-					fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(255, 64, 64, 0.3)',
-					value: 1000, maxValue: 1000, strokeWidth: 1,
-					width: 128, height: 16
-				}).addChildTo(this);
-				gauge_h.animation = false;
-				gauge_h.setPosition(80, SCREEN_HEIGHT - 100);
-
-				gauge_e = phina.ui.Gauge({
-					fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(64, 64, 255, 0.3)',
-					value: 1000, maxValue: 1000, strokeWidth: 1,
-					width: 128, height: 16
-				}).addChildTo(this);
-				gauge_e.animation = false;
-				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
-
-				gauge_boss_h = phina.ui.Gauge({
-					fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(200, 16, 16, 0.3)',
-					strokeWidth: 1, width: SCREEN_WIDTH / 1.2, height: 16
-				}).addChildTo(this);
-				gauge_boss_h.alpha = 0;
-				gauge_boss_h.animation = false;
-				gauge_boss_h.setPosition(SCREEN_CENTER_X, 20);
-
-				msgbox = phina.display.RectangleShape({
-					fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)',
-					strokeWidth: 1, cornerRadius: 5,
-					width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12
-				}).addChildTo(this);
-				msgbox.live = 0;
-				msgbox.setPosition(0, SCREEN_HEIGHT);
-
-				message = phina.display.Label({text: '', fontSize: 32, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'}).addChildTo(this);
-				message.setPosition(0, SCREEN_HEIGHT);
-
-				speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'}).addChildTo(this);
-				speed.setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
-				resolve();
-			}, function(resolve) { // Managers Setup
-				enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message).addChildTo(this);
-				effectManager = enemyManager.effectmanager;
-				enmBulletManager = fly.BulletManager(layer.scene).addChildTo(this);
-				windManager = fly.WindManager(layer.scene).addChildTo(this);
-				resolve();
-			}, function(resolve) { // Load Players
-				flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
-				sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
-				plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({
-					map: phina.asset.AssetManager.get('threetexture', 'plane').get()
-				}));
-				plane.rotate(-Math.PI / 2, 0, 0);
+		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
+		var goal;
+		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
+		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({
+			map: phina.asset.AssetManager.get('threetexture', 'plane').get()
+		}));
+		this.load([[
+			function(resolve) { // Load Player
 				flyer.position.y = 1000;
 				flyer.transparent = true;
 				flyer.opacity = 0.3;
@@ -220,7 +152,7 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
-								enmBulletManager.remove(i);
+								enmBulletManager.removeBullet(i);
 							}
 						}
 						for (var i = 0; i < enemyManager.elements.length; i++) {
@@ -231,7 +163,7 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
-								enemyManager.remove(i);
+								enemyManager.removeEnemy(i);
 							}
 						}
 					},
@@ -274,91 +206,116 @@ phina.define('fly.MainScene', {
 					this.position.z = flyer.position.z;
 				}
 				resolve();
-			}, function(resolve) { // Load Enemys
-				// Enemy creater / Enemy action routine
-				enemyManager.defineEnemy('enem1', {
-					v: 0.6, duration: 100,
-					update: function() {
-						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
-						if (this.time % this.duration === 0) {
-							enmBulletManager.createBullet({
-								position: this.position, quaternion: this.quaternion,
-								v: 2, atk: 70
-							});
+			}
+		], [
+			function(resolve) { // Stage loading
+				if (this.stage !== 'arcade') {
+					var load = function() {
+						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
+						for(var i = 0; i < stage.enemys.length; i++) {
+							if (!enemyManager.definedenemy[stage.enemys[i].name]) {
+								enemyManager.defineEnemy(stage.enemys[i].name);
+							}
+							enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn, stage.enemys[i].killmes);
 						}
-						this.quaternion.rotate(this.c);
-						this.time++;
-					}
-				}, {rep: 6, delay: 15});
-				enemyManager.defineEnemy('enem2', {
-					hp: 45, v: 1, size: 15, chase: 0.1, mindist: 500, duration: 15, explodeTime: 30,
-					update: function() {
-						if(!flyer.position.equals(this.position)) {
-							var dir = flyer.position.clone().sub(this.position.clone());
-							var spd = this.v * Math.clamp((dir.length() - this.mindist) * 2 / this.mindist, -1, 1);
-							dir.normalize();
-							this.quaternion.slerp(new THREE.Quaternion().setFromAxisAngle(Axis.z.clone().cross(dir).normalize(), Math.acos(Axis.z.clone().dot(dir))), this.chase);
-							this.position.addScaledVector(dir, spd);
+						for(var i = 0; i < stage.winds.length; i++) {
+							windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
 						}
-						if (this.time % this.duration === 0) {
-							enmBulletManager.createBullet({
-								position: this.position, quaternion: this.quaternion,
-								v: 3, size: 1.5, atk: 100
-							});
+						for(var i = 0; i < stage.messages.length; i++) {
+							(function() {
+								var tmp = i;
+								this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
+								this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
+							}).bind(this)();
 						}
-						this.time++;
-					}
-				}, {});
-				enemyManager.defineEnemy('enem3', {
-					hp: 500, v: 0.25, size: 30, duration: 3, r: 0.1, explodeTime: 30,
-					scale: new THREE.Vector3(2, 2, 2),
-					update: function() {
-						this.rotate(this.c);
-						var vec = Axis.z.clone().applyQuaternion(this.quaternion).normalize();
-						this.rotate(new THREE.Quaternion().setFromAxisAngle(vec, this.r));
-						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
-						if (this.time % this.duration === 0) {
-							var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
-							enmBulletManager.createBullet({
-								position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(vecs, Math.PI * (this.time % (this.duration * 8)) / this.duration / 8)),
-								size: 0.5, atk: 50
-							});
-						}
-						this.time++;
-					}
-				}, {});
-				resolve();
-			}, function(resolve) { // Stage Loading
-				if (this.stage !== 'arcade' && (!phina.asset.AssetManager.get('stage', this.stage))) {
+						var material = new THREE.ShaderMaterial({
+							transparent: true,
+							uniforms: {
+								tExplosion: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal').get()},
+								time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
+							},
+							vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').get(),
+							fragmentShader: phina.asset.AssetManager.get('text', 'expfragshader').get()
+						});
+						goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), material).$safe({
+							update: function() {material.uniforms.time.value += 0.005 * Math.random();}
+						});
+						goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
+						layer.scene.add(goal);
+						var xdist = flyer.position.x / 15 - goal.position.x / 15;
+						var zdist = flyer.position.z / 15 - goal.position.z / 15;
+						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
+						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
+						goalrader = phina.display.CircleShape({radius: 5, fill: 'hsla(190, 100%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
+							.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+						resolve();
+					}.bind(this);
+				}
+				if (!phina.asset.AssetManager.get('stage', this.stage)) {
 					var loader = phina.asset.AssetLoader();
-					loader.onload = function(e) {resolve();};
 					var asset = {stage: {}};
 					asset.stage[this.stage] = 'data/stages/' + this.stage + '.min.json';
-					loader.load(asset);
+					loader.load(asset).then(function() {
+						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
+						asset = {threejson: {}};
+						for(var i = 0; i < stage.enemys.length; i++) {
+							if (!phina.asset.AssetManager.get('threejson', stage.enemys[i].name)) {
+								asset.threejson[stage.enemys[i].name] = 'data/models/' + enemyManager.enemys[stage.enemys[i].name].filename + '.min.json';
+							}
+						}
+						loader.onload = load;
+						loader.load(asset)
+					}.bind(this));
 				} else {
+					load();
 					resolve();
 				}
+			}
+		], [
+			function(resolve) { // Screen Setup
+				layer.addChildTo(this);
+				map.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				playerpos.rotation = 180;
+
+				for(var i = 0; i < 4; i++) {
+					direction[i] = fly.DirectionShape({
+						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
+					}).addChildTo(this)
+						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
+					direction[i].rotation = -i * 90;
+				}
+
+				gauge_h.addChildTo(this).setPosition(80, SCREEN_HEIGHT - 100);
+				gauge_h.animation = false;
+				gauge_e.addChildTo(this);
+				gauge_e.animation = false;
+				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
+				if (this.stage !== 'arcade') {
+					goalrader.addChildTo(this);
+					gauge_boss_h.addChildTo(this).setPosition(SCREEN_CENTER_X, 20);
+					gauge_boss_h.alpha = 0;
+					gauge_boss_h.animation = false;
+					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+					msgbox.live = 0;
+					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+				}
+
+				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
+
+				enemyManager.addChildTo(this);
+				enmBulletManager.addChildTo(this);
+				windManager.addChildTo(this);
+				resolve();
 			}, function(resolve) { // Stage Setup
+				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+				directionalLight.position.set(0, 0, 30);
+				plane.rotate(-Math.PI / 2, 0, 0);
+				layer.scene.add(directionalLight);
+				layer.scene.add(new THREE.AmbientLight(0x606060));
 				layer.scene.add(flyer);
 				layer.scene.add(sky);
 				layer.scene.add(plane);
-
-				if (this.stage !== 'arcade') {
-					var stage = phina.asset.AssetManager.get('stage', this.stage).get();
-					for(var i = 0; i < stage.enemys.length; i++) {
-						enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn, stage.enemys[i].killmes);
-					}
-					for(var i = 0; i < stage.winds.length; i++) {
-						windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
-					}
-					for(var i = 0; i < stage.messages.length; i++) {
-						var tmp = i;
-						this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
-						this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
-					}
-					goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), new THREE.Material());
-					goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
-				}
 				resolve();
 			}, function(resolve) {
 				layer.update = function(app) { // Update routine
@@ -380,19 +337,24 @@ phina.define('fly.MainScene', {
 							}, {random: {x: 5, y: 5, z: 5}});
 						}
 						this.difficulty += 0.0001;
-						if (enemyManager.count() > 50) {enemyManager.remove(0);}
+						if (enemyManager.count() > 50) {enemyManager.removeEnemy(0);}
 					} else {
 						this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
+						var xdist = flyer.position.x / 15 - goal.position.x / 15;
+						var zdist = flyer.position.z / 15 - goal.position.z / 15;
+						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
+						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
+						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 						enemyManager.flare('frame', {progress: this.progress});
 					}
 					for (var i = 0; i < enemyManager.elements.length; i++) {
 						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {
-							enemyManager.remove(i);
+							enemyManager.removeEnemy(i);
 						}
 					}
 					for (var i = 0; i < enmBulletManager.elements.length; i++) {
 						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
-							enmBulletManager.remove(i);
+							enmBulletManager.removeBullet(i);
 						}
 					}
 
@@ -401,6 +363,7 @@ phina.define('fly.MainScene', {
 					flyer.update(p, k, this);
 					sky.update();
 					plane.update();
+					goal.update();
 					windManager.flyerposy = flyer.position.y;
 
 					for(var i = 0; i < 4; i++) {
@@ -439,14 +402,14 @@ phina.define('fly.MainScene', {
 							msgbox.setPosition(SCREEN_CENTER_X * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 							msgbox.width = SCREEN_WIDTH / 10 + SCREEN_WIDTH / 1.3 * msgbox.live;
 							msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 8 * msgbox.live;
-							message.setPosition(SCREEN_CENTER_X  * 0.25 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
+							message.setPosition(SCREEN_CENTER_X  * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 						}
 					} else if (msgbox.live > 0.00001) {
 						msgbox.live -= 0.5;
 						msgbox.setPosition(SCREEN_CENTER_X * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 						msgbox.width = SCREEN_WIDTH / 10 + SCREEN_WIDTH / 1.3 * msgbox.live;
 						msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 5 * msgbox.live;
-						message.setPosition(SCREEN_CENTER_X * 0.25 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
+						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
 
 					if (flyer.hp <= 0) {
@@ -461,6 +424,6 @@ phina.define('fly.MainScene', {
 				}.bind(this);
 				resolve();
 			}
-		]);
+		]]);
 	}
 });

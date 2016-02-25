@@ -9,8 +9,8 @@ phina.define('fly.DirectionShape', {
 			stroke: '#aaa',
 			strokeWidth: 2,
 
-			radiusshort: 16,
-			radiuslong: 32
+			width: 16,
+			height: 32
 		});
 		this.superInit(options);
 	},
@@ -20,18 +20,24 @@ phina.define('fly.DirectionShape', {
 		canvas.transformCenter();
 
 		if (this.fill) {
-			canvas.context.fillStyle = this.fill;
+			canvas.fillStyle = this.fill;
+			console.log(this.height);
 			canvas.beginPath();
-			canvas.moveTo(0, this.radiuslong);
-			canvas.lineTo(this.radiusshort, -this.radiuslong);
-			canvas.lineTo(-this.radiusshort, -this.radiuslong);
-			canvas.lineTo(0, this.radiuslong);
+			canvas.moveTo(0, this.height);
+			canvas.lineTo(this.width, -this.height);
+			canvas.lineTo(-this.width, -this.height);
 			canvas.closePath();
 			canvas.fill();
 		}
-		if (this.stroke && 0 < this.strokeWidth) {
-			canvas.context.lineWidth = this.strokeWidth;
+
+		if (this.isStrokable()) {
+			canvas.lineWidth = this.strokeWidth;
 			canvas.strokeStyle = this.stroke;
+			canvas.beginPath();
+			canvas.moveTo(0, this.height);
+			canvas.lineTo(this.width, -this.height);
+			canvas.lineTo(-this.width, -this.height);
+			canvas.closePath();
 			canvas.stroke();
 		}
 	},

@@ -49,7 +49,7 @@ phina.define('fly.WindManager', {
 		this.time++;
 	},
 
-	remove: function(i) {
+	removeWind: function(i) {
 		for (var j = 0; j < this.get(i).winds.length; j++) {
 			this.get(i).winds[j].parent.remove(this.get(i).winds[j]);
 		}

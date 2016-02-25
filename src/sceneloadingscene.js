@@ -5,28 +5,36 @@ phina.define('fly.SceneLoadingScene', {
 		options = (options || {}).$safe(fly.SceneLoadingScene.defaults)
 		this.superInit(options);
 		this.options = options;
+		this.loadprogress = 0;
+		this.loadfrequenry = 0;
 	},
 
-	load: function(params, i) {
-		i |= 0;
-		if (i === 0) {
-			this.label = phina.display.Label({
-				text: 'Loading... ' + 0 + '%',
-				fill: 'hsla(0, 0%, 0%, 0.6)',
-				fontSize: 12,
-			});
-			this.label.setPosition({x: SCREEN_CENTER_X, y: SCREEN_CENTER_Y});
+	load: function(params) {
+		this.label = phina.display.Label({
+			text: 'Loading... ' + 0 + '%',
+			fill: 'hsla(0, 0%, 0%, 0.6)',
+			fontSize: 15,
+		}).addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+		for(var i = 0; i < params.length; i++) {for(var j = 0; j < params[i].length; j++) {this.loadfrequenry++;}}
+		var exec = function() {
+			flows = [];
+			for(var j = 0; j < params[ii].length; j++) {
+				(function() {
+					var flow = phina.util.Flow(params[ii][j].bind(this));
+					flow.then(function() {
+						this.label.text = 'Loading... ' + ++this.loadprogress / this.loadfrequenry * 100 + '%';
+						if (this.loadprogress === this.loadfrequenry) {this.removeChild(this.label);}
+					}.bind(this));
+					flows.push(flow);
+				}.bind(this))();
+			}
+		}.bind(this);
+		var ii = 0;
+		var flows = [];
+		exec();
+		for(i = 1; i < params.length; i++) {
+			var ii = i;
+			phina.util.Flow.all(flows).then(exec);
 		}
-		var flow = phina.util.Flow(params[i].bind(this));
-		flow.then(function() {
-			this.label.text = 'Loading... ' + ++i / params.length * 100 + '%';
-			if(i < params.length) {this.load(params, i);} else {this.removeChild(this.label);}
-		}.bind(this));
-	},
-
-	_static: {
-		defaults: {
-			animationTime: 100
-		},
 	}
 });

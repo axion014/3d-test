@@ -14,10 +14,10 @@ phina.define('fly.EnemyManager', {
 		this.effectmanager = new fly.EffectManager(ts).addChildTo(this);
 	},
 
-	defineEnemy: function(n, r, as) {
-		this.definedenemy[n] = {mesh: phina.asset.AssetManager.get('threejson', n).get(), routine: r.$safe({
+	defineEnemy: function(n) {
+		this.definedenemy[n] = {mesh: phina.asset.AssetManager.get('threejson', n).get(), routine: this.enemys[n].routine.$safe({
 			hp: 5, size: 1, v: 0, c: new THREE.Quaternion(), time: 0, update: function(){}
-		}), autospawn: (as || {}).$safe({rep: 1, options: {}})};
+		}), autospawn: (this.enemys[n].autospawn || {}).$safe({rep: 1, options: {}})};
 	},
 	createEnemy: function(n, r, g, t, p) {
 		if(p) {
@@ -37,13 +37,12 @@ phina.define('fly.EnemyManager', {
 			enemy.group = g;
 			this.threescene.add(enemy);
 			this.elements.push(enemy);
-			var rader = phina.display.CircleShape().addChildTo(this.scene);
-			rader.radius = 3;
-			rader.fill = 'hsla(0, 80%, 60%, 0.5)';
-			rader.stroke = 'hsla(0, 0%, 0%, 0.5)';
-			rader.strokeWidth = 1;
-			rader.setPosition(SCREEN_WIDTH - 100 - this.flyer.position.x / 10 + enemy.position.x / 10,
-				SCREEN_HEIGHT - 100 - this.flyer.position.z / 10 + enemy.position.z / 10);
+			var rader = phina.display.CircleShape({radius: 3, fill: 'hsla(0, 80%, 60%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1}).addChildTo(this.scene);
+			var xdist = this.flyer.position.x / 15 - enemy.position.x / 15;
+			var zdist = this.flyer.position.z / 15 - enemy.position.z / 15;
+			var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
+			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y + (Math.abs(this.flyer.myrot.x) > Math.PI / 2 && Math.abs(this.flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
+			rader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 			this.enemyraders.push(rader);
 			if (r.boss) {
 				this.scene.bosscoming = true;
@@ -72,22 +71,20 @@ phina.define('fly.EnemyManager', {
 
 	update: function() {
 		for (var i = 0; i < this.count(); i++) {
-			this.get(i).update();
-			var xdist = this.flyer.position.x / 10 - this.get(i).position.x / 10;
-			var zdist = this.flyer.position.z / 10 - this.get(i).position.z / 10;
-			var distance = Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2));
+			this.get(i).update(this);
+			var xdist = this.flyer.position.x / 15 - this.get(i).position.x / 15;
+			var zdist = this.flyer.position.z / 15 - this.get(i).position.z / 15;
+			var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
 			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y + (Math.abs(this.flyer.myrot.x) > Math.PI / 2 && Math.abs(this.flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
-			distance = Math.min(distance, 75);
-			this.enemyraders[i].setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance,
-				SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+			this.enemyraders[i].setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 			if (this.get(i).hp <= 0) {
-				this.remove(i);
+				this.removeEnemy(i);
 				i--;
 			}
 		}
 	},
 
-	remove: function(i) {
+	removeEnemy: function(i) {
 		this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
 		this.scene.score += this.get(i).size;
 		this.get(i).group.num--;
@@ -102,5 +99,70 @@ phina.define('fly.EnemyManager', {
 		this.elements.splice(i, 1);
 		this.enemyraders[i].remove();
 		this.enemyraders.splice(i, 1);
+	},
+
+	// Enemys routine
+	enemys: {
+		enem1: {
+			filename: 'enem-1',
+			routine: {
+				v: 0.6, duration: 100,
+				update: function(em) {
+					this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
+					if (this.time % this.duration === 0) {
+						em.enmBulletManager.createBullet({
+							position: this.position, quaternion: this.quaternion,
+							v: 2, atk: 70
+						});
+					}
+					this.quaternion.rotate(this.c);
+					this.time++;
+				}
+			},
+			autospawn: {rep: 6, delay: 15}
+		},
+		enem2: {
+			filename: 'enem-2',
+			routine: {
+				hp: 45, v: 1, size: 15, chase: 0.1, mindist: 500, duration: 15, explodeTime: 30,
+				update: function(em) {
+					if (!flyer.position.equals(this.position)) {
+						var dir = flyer.position.clone().sub(this.position.clone());
+						var spd = this.v * Math.clamp((dir.length() - this.mindist) * 2 / this.mindist, -1, 1);
+						dir.normalize();
+						this.quaternion.slerp(new THREE.Quaternion().setFromAxisAngle(Axis.z.clone().cross(dir).normalize(), Math.acos(Axis.z.clone().dot(dir))), this.chase);
+						this.position.addScaledVector(dir, spd);
+					}
+					if (this.time % this.duration === 0) {
+						em.enmBulletManager.createBullet({
+							position: this.position, quaternion: this.quaternion,
+							v: 3, size: 1.5, atk: 100
+						});
+					}
+					this.time++;
+				}
+			}
+		},
+		enem3: {
+			filename: 'enem-3',
+			routine: {
+				hp: 500, v: 0.25, size: 30, duration: 3, r: 0.1, explodeTime: 30,
+				scale: new THREE.Vector3(2, 2, 2),
+				update: function(em) {
+					this.rotate(this.c);
+					var vec = Axis.z.clone().applyQuaternion(this.quaternion).normalize();
+					this.rotate(new THREE.Quaternion().setFromAxisAngle(vec, this.r));
+					this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
+					if (this.time % this.duration === 0) {
+						var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
+						em.enmBulletManager.createBullet({
+							position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(vecs, Math.PI * (this.time % (this.duration * 8)) / this.duration / 8)),
+							size: 0.5, atk: 50
+						});
+					}
+					this.time++;
+				}
+			}
+		}
 	}
 });

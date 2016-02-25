@@ -3,7 +3,8 @@
 		{
 			"name": "enem1",
 			"position": {"x": 150, "y": 940, "z": -10},
-			"autospawn": {"rep": 1}
+			"autospawn": {"time": 200, "rep": 1},
+			"killmes": {"time": 30, "text": "無事に敵を撃破できましたね。\nレーダーの端にゴールの方向が表示されています。\nクリックで前進して、その方向に向かいましょう。"}
 		},
 		{
 			"name": "enem1",
@@ -38,9 +39,13 @@
 			"position": {"x": 1400, "y": 1150, "z": 1020},
 			"rotation": {"x": 0.1, "y": -0.2},
 			"option": {"boss": true},
-			"autospawn": {"progress": 0.8}
+			"autospawn": {"progress": 0.8},
+			"killmes": {"time": 50, "text": "test2"}
 		}
 	],
-	"winds": [],
+	"messages": [
+		{"time": 40, "text": "このゲームでは、マウスカーソルで自機を操作します。\n試しに左右に動かしてみましょう。"},
+		{"time": 200, "text": "敵が出現しました。右下のレーダーを見て\n敵の方向を向き、Zキーで攻撃しましょう。"}
+	],
 	"goal": {"x": 2000, "z": 2000, "kill": 0.9}
 }

@@ -16,7 +16,7 @@
     "colors": [],
     "name": "enem-2Geometry",
     "materials": [{
-        "mapDiffuse": "enem-2.png",
+        "mapDiffuse": "enem-3.png",
         "colorEmissive": [0,0,0],
         "shading": "phong",
         "visible": true,

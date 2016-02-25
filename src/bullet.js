@@ -22,7 +22,7 @@ phina.define('fly.BulletManager', {
 
 	update: function() {for (var i = 0; i < this.count(); i++) {this.get(i).update();}},
 
-	remove: function(i) {
+	removeBullet: function(i) {
 		this.get(i).parent.remove(this.get(i));
 		this.elements.splice(i, 1);
 	}

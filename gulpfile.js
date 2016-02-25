@@ -11,6 +11,9 @@ gulp.task('default', ['test']);
 gulp.task('watch', ['test'], function() {
 	gulp.watch(['src/**/*'], ['test']);
 });
+gulp.task('jsonwatch', ['jsonminify'], function() {
+	gulp.watch(['data/**/!(*.min).json'], ['jsonminify']);
+});
 gulp.task('live', ['watch'], function() {
 	gulp.src('.')
 	.pipe(plumber())
@@ -18,7 +21,7 @@ gulp.task('live', ['watch'], function() {
 		enable: true, filter: function(filename) {return !filename.match(/src/);}
 	}}))
 });
-gulp.task('server', ['watch', 'open']);
+gulp.task('server', ['watch', 'jsonwatch', 'open']);
 gulp.task('open', function() {
 	gulp.src('.')
 	.pipe(plumber())
