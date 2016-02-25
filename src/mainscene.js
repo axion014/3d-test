@@ -48,7 +48,7 @@ phina.define('fly.MainScene', {
 				flyer.opacity = 0.3;
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
-					row: 0, yo: 0, v: 0, rgc: 0, brc: 0, sc: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
+					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
 					av: new THREE.Vector3(),
 					update: function(p, k, s) {
 						var c = 0;
@@ -78,7 +78,7 @@ phina.define('fly.MainScene', {
 						this.av.multiplyScalar(0.98);
 
 						this.myrot.z1 *= 0.95;
-						this.locked = k.getKey(16);
+						this.locked = k.getKey(16); // Shift key
 						if (k.getKeyDown(16)) {this.lock = Math.abs(this.myrot.x) < Math.PI / 2 || Math.abs(this.myrot.x) > Math.PI * 1.5;}
 						if (this.locked ? this.lock : (Math.abs(this.myrot.x) < Math.PI / 2 || Math.abs(this.myrot.x) > Math.PI * 1.5)) {
 							if (this.ups < 0.00015) {this.ups += 0.00001;}
@@ -92,7 +92,7 @@ phina.define('fly.MainScene', {
 						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
 
 						if (this.e > 0) {
-							if (k.getKey(90) && this.sc === 0) {
+							if (k.getKey(90)) { // Z Key
 								this.e -= 2;
 								var rnd1 = this.quaternion.clone();
 								rnd1.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.random() * 0.06 - 0.03));
@@ -103,38 +103,35 @@ phina.define('fly.MainScene', {
 								this.attack(rnd1, s);
 								this.attack(rnd2, s);
 							}
-							if (k.getKeyDown(88) && this.rgc === 0 && this.e >= 250) {
-								this.rgc = 20;
+							if (k.getKeyDown(88) && this.s1c === 0 && this.e >= 250) { // X Key
+								this.s1c = 20;
 								this.rgl = 2;
 								this.e -= 250;
-								this.beam(40, 2, 15, 0, s);
 								effectManager.ray(this, 0xffffff, 0.2, 1, 27, 7);
 								effectManager.ray(this, 0x00ffff, 0.2, 2, 27, 5);
 								effectManager.ray(this, 0x0000ff, 0.2, 4, 27, 3);
-							} else if (this.rgl > 0) {
+							}
+							if (this.rgl > 0) {
 								this.rgl--;
 								this.beam(30, 2, 15, 0, s);
 							}
-							if (k.getKeyDown(67) && this.brc === 0 && this.e >= 700) {
-								this.brc = 250;
+							if (k.getKeyDown(67) && this.s2c === 0 && this.e >= 700) { // C Key
+								this.s2c = 250;
 								this.brl = 17;
-								this.rgc = 80;
-								this.sc = 50;
 								this.e -= 700;
-								this.beam(100, 3, 25, 30, s);
 								effectManager.ray(this, 0xffffff, 0.2, 8, 27, 24);
 								effectManager.ray(this, 0xffcccc, 0.2, 12, 27, 22);
 								effectManager.ray(this, 0xff8888, 0.2, 18, 27, 20);
 								effectManager.ray(this, 0xff4444, 0.2, 24, 27, 18);
 								effectManager.ray(this, 0xff0000, 0.2, 30, 27, 16);
-							} else if (this.brl > 0) {
+							}
+							if (this.brl > 0) {
 								this.brl--;
 								this.beam(25, 3, 25, 30, s);
 							}
 						}
-						if (this.rgc > 0) {this.rgc--;}
-						if (this.brc > 0) {this.brc--;}
-						if (this.sc > 0) {this.sc--;}
+						if (this.s1c > 0) {this.s1c--;}
+						if (this.s2c > 0) {this.s2c--;}
 						gauge_e.value = this.e;
 						if (this.e < 1000) {this.e += 4;}
 						gauge_h.value = this.hp;
