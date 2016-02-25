@@ -49,7 +49,7 @@ phina.define('fly.MainScene', {
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
 					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
-					av: new THREE.Vector3(),
+					av: new THREE.Vector3(), sub1id: 0, sub2id: 1,
 					update: function(p, k, s) {
 						var c = 0;
 						this.v += 0.05;
@@ -92,7 +92,7 @@ phina.define('fly.MainScene', {
 						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
 
 						if (this.e > 0) {
-							if (k.getKey(90)) { // Z Key
+							if (k.getKey(90) && this.s1c === 0) { // Z Key
 								this.e -= 2;
 								var rnd1 = this.quaternion.clone();
 								rnd1.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.random() * 0.06 - 0.03));
@@ -103,27 +103,11 @@ phina.define('fly.MainScene', {
 								this.attack(rnd1, s);
 								this.attack(rnd2, s);
 							}
-							if (k.getKeyDown(88) && this.s1c === 0 && this.e >= 250) { // X Key
-								this.s1c = 20;
-								this.rgl = 2;
-								this.e -= 250;
-								effectManager.ray(this, 0xffffff, 0.2, 1, 27, 7);
-								effectManager.ray(this, 0x00ffff, 0.2, 2, 27, 5);
-								effectManager.ray(this, 0x0000ff, 0.2, 4, 27, 3);
-							}
+							if (k.getKeyDown(88) && this.s1c === 0) {this.sub[this.sub1id]();} // X Key
+							if (k.getKeyDown(67) && this.s2c === 0) {this.sub[this.sub2id]();} // C Key
 							if (this.rgl > 0) {
 								this.rgl--;
 								this.beam(30, 2, 15, 0, s);
-							}
-							if (k.getKeyDown(67) && this.s2c === 0 && this.e >= 700) { // C Key
-								this.s2c = 250;
-								this.brl = 17;
-								this.e -= 700;
-								effectManager.ray(this, 0xffffff, 0.2, 8, 27, 24);
-								effectManager.ray(this, 0xffcccc, 0.2, 12, 27, 22);
-								effectManager.ray(this, 0xff8888, 0.2, 18, 27, 20);
-								effectManager.ray(this, 0xff4444, 0.2, 24, 27, 18);
-								effectManager.ray(this, 0xff0000, 0.2, 30, 27, 16);
 							}
 							if (this.brl > 0) {
 								this.brl--;
@@ -164,6 +148,30 @@ phina.define('fly.MainScene', {
 							}
 						}
 					},
+					sub: [
+						function() {
+							if (this.e >= 250) {
+								this.s1c = 20;
+								this.rgl = 2;
+								this.e -= 250;
+								effectManager.ray(this, 0xffffff, 0.2, 1, 27, 7);
+								effectManager.ray(this, 0x00ffff, 0.2, 2, 27, 5);
+								effectManager.ray(this, 0x0000ff, 0.2, 4, 27, 3);
+							}
+						}.bind(flyer),
+						function() {
+							if (this.e >= 700) {
+								this.s2c = 250;
+								this.brl = 17;
+								this.e -= 700;
+								effectManager.ray(this, 0xffffff, 0.2, 8, 27, 24);
+								effectManager.ray(this, 0xffcccc, 0.2, 12, 27, 22);
+								effectManager.ray(this, 0xff8888, 0.2, 18, 27, 20);
+								effectManager.ray(this, 0xff4444, 0.2, 24, 27, 18);
+								effectManager.ray(this, 0xff0000, 0.2, 30, 27, 16);
+							}
+						}.bind(flyer)
+					],
 					attack: function(rot, s) {
 						var caster = new THREE.Raycaster();
 						caster.set(this.position.clone(), Axis.z.clone().applyQuaternion(rot).normalize());
@@ -219,11 +227,25 @@ phina.define('fly.MainScene', {
 							windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
 						}
 						for(var i = 0; i < stage.messages.length; i++) {
-							(function() {
-								var tmp = i;
-								this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
-								this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
-							}).bind(this)();
+							if (!stage.messages[i].progress || stage.messages[i].progress < 0.00001) {
+								(function() {
+									var tmp = i;
+									this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
+									this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
+								}).bind(this)();
+							} else {
+								(function() {
+									var tmp = i;
+									var callfunc = function() {
+										if (stage.messages[tmp].progress < this.progress) {
+											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
+											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
+											this.off('frame', callfunc);
+										}
+									}.bind(this);
+									this.on('frame', callfunc);
+								}).bind(this)();
+							}
 						}
 						var material = new THREE.ShaderMaterial({
 							transparent: true,
@@ -343,6 +365,7 @@ phina.define('fly.MainScene', {
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 						enemyManager.flare('frame', {progress: this.progress});
+						this.flare('frame');
 					}
 					for (var i = 0; i < enemyManager.elements.length; i++) {
 						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {
@@ -392,7 +415,7 @@ phina.define('fly.MainScene', {
 						gauge_boss_h.alpha -= 0.1;
 					}
 
-					if (k.getKeyDown(32)) {message.text = '';}
+					if (k.getKeyDown(90)) {message.text = '';}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
 							msgbox.live += 0.5;

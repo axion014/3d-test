@@ -106,9 +106,17 @@ phina.define('fly.EnemyManager', {
 		enem1: {
 			filename: 'enem-1',
 			routine: {
-				v: 0.6, duration: 100,
+				v: 0.6, chase: 0, duration: 100, mindist: 0,
 				update: function(em) {
-					this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
+					if (!em.flyer.position.equals(this.position) && this.chase !== 0 && this.mindist !== 0) {
+						var dir = em.flyer.position.clone().sub(this.position.clone());
+						var spd = this.v * Math.clamp((dir.length() - this.mindist) * 2 / this.mindist, -1, 1);
+						dir.normalize();
+						this.quaternion.slerp(new THREE.Quaternion().setFromAxisAngle(Axis.z.clone().cross(dir).normalize(), Math.acos(Axis.z.clone().dot(dir))), this.chase);
+						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), spd);
+					} else {
+						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
+					}
 					if (this.time % this.duration === 0) {
 						em.enmBulletManager.createBullet({
 							position: this.position, quaternion: this.quaternion,
@@ -126,12 +134,12 @@ phina.define('fly.EnemyManager', {
 			routine: {
 				hp: 45, v: 1, size: 15, chase: 0.1, mindist: 500, duration: 15, explodeTime: 30,
 				update: function(em) {
-					if (!flyer.position.equals(this.position)) {
-						var dir = flyer.position.clone().sub(this.position.clone());
+					if (!em.flyer.position.equals(this.position)) {
+						var dir = em.flyer.position.clone().sub(this.position.clone());
 						var spd = this.v * Math.clamp((dir.length() - this.mindist) * 2 / this.mindist, -1, 1);
 						dir.normalize();
 						this.quaternion.slerp(new THREE.Quaternion().setFromAxisAngle(Axis.z.clone().cross(dir).normalize(), Math.acos(Axis.z.clone().dot(dir))), this.chase);
-						this.position.addScaledVector(dir, spd);
+						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), spd);
 					}
 					if (this.time % this.duration === 0) {
 						em.enmBulletManager.createBullet({

@@ -21,7 +21,6 @@ phina.define('fly.DirectionShape', {
 
 		if (this.fill) {
 			canvas.fillStyle = this.fill;
-			console.log(this.height);
 			canvas.beginPath();
 			canvas.moveTo(0, this.height);
 			canvas.lineTo(this.width, -this.height);
