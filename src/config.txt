@@ -4,6 +4,7 @@ simpleupdater.js
 directionshape.js
 loaders.js
 collision.js
+popup.js
 effects.js
 enemy.js
 bullet.js

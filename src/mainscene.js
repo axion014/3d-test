@@ -28,6 +28,7 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
+		var popup = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'}});
 
 		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
@@ -38,9 +39,7 @@ phina.define('fly.MainScene', {
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var goal;
 		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
-		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({
-			map: phina.asset.AssetManager.get('threetexture', 'plane').get()
-		}));
+		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
 		this.load([[
 			function(resolve) { // Load Player
 				flyer.position.y = 1000;
@@ -61,7 +60,7 @@ phina.define('fly.MainScene', {
 							this.e--;
 							this.v += this.speeds[this.speed];
 						}
-						if (k.getKeyDown(68)) {
+						if (k.getKeyDown(68)) { // D Key
 							this.speed++;
 							this.speed %= 4;
 							speed.text = 'speed: ' + (this.speed + 1);
@@ -89,7 +88,7 @@ phina.define('fly.MainScene', {
 						}
 						this.yo *= 0.95;
 						this.row *= 0.9;
-						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
+						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0); // V Key
 
 						if (this.e > 0) {
 							if (k.getKey(90) && this.s1c === 0) { // Z Key
@@ -297,6 +296,13 @@ phina.define('fly.MainScene', {
 				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.rotation = 180;
 
+				var grad = popup.canvas.context.createLinearGradient(0, -popup.height / 2, 0, popup.height / 2);
+				grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
+				grad.addColorStop(0.5, 'hsla(0, 0%, 0%, 0)');
+				grad.addColorStop(1, 'hsla(0, 0%, 0%, 0.6)');
+				popup.fill = grad;
+				popup.alpha = 0;
+
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
 						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
@@ -321,6 +327,7 @@ phina.define('fly.MainScene', {
 				}
 
 				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
+				popup.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
 
 				enemyManager.addChildTo(this);
 				enmBulletManager.addChildTo(this);

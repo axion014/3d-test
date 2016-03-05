@@ -28,7 +28,6 @@ phina.define('fly.MainSequence', {
 						}
 					}
 				},
-
 				{
 					label: 'title',
 					className: 'fly.TitleScene',
