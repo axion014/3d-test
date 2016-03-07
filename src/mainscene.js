@@ -28,7 +28,7 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
-		var popup = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'}});
+		var popup = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
 
 		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
@@ -216,6 +216,7 @@ phina.define('fly.MainScene', {
 				if (this.stage !== 'arcade') {
 					var load = function() {
 						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
+						popup.label.text = stage.name;
 						for(var i = 0; i < stage.enemys.length; i++) {
 							if (!enemyManager.definedenemy[stage.enemys[i].name]) {
 								enemyManager.defineEnemy(stage.enemys[i].name);
@@ -239,10 +240,10 @@ phina.define('fly.MainScene', {
 										if (stage.messages[tmp].progress < this.progress) {
 											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
 											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
-											this.off('frame', callfunc);
+											this.off('enterframe', callfunc);
 										}
 									}.bind(this);
-									this.on('frame', callfunc);
+									this.on('enterframe', callfunc);
 								}).bind(this)();
 							}
 						}
@@ -301,7 +302,6 @@ phina.define('fly.MainScene', {
 				grad.addColorStop(0.5, 'hsla(0, 0%, 0%, 0)');
 				grad.addColorStop(1, 'hsla(0, 0%, 0%, 0.6)');
 				popup.fill = grad;
-				popup.alpha = 0;
 
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
@@ -324,10 +324,15 @@ phina.define('fly.MainScene', {
 					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
 					msgbox.live = 0;
 					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+					popup.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+					popup.tweener2 = phina.accessory.Tweener().attachTo(popup);
+					popup.tweener.setUpdateType('fps');
+					popup.tweener2.setUpdateType('fps');
+					popup.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
+					popup.tweener2.set({alpha: 0}).wait(10).to({alpha: 1}, 30).wait(40).to({alpha: 0}, 30);
 				}
 
 				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
-				popup.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
 
 				enemyManager.addChildTo(this);
 				enmBulletManager.addChildTo(this);
@@ -372,7 +377,6 @@ phina.define('fly.MainScene', {
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 						enemyManager.flare('frame', {progress: this.progress});
-						this.flare('frame');
 					}
 					for (var i = 0; i < enemyManager.elements.length; i++) {
 						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {

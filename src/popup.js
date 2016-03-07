@@ -8,22 +8,13 @@ phina.define('fly.Popup', {
 			strokeWidth: 2,
 
 			width: 512,
-			height: 32,
-			viewHeight: 0,
-			sideIndent: 32,
-			content: phina.app.Element()
+			height: 48,
+			sideIndent: 32
 		});
     this.superInit(options);
 		this.sideIndent = options.sideIndent;
 		this.viewHeight = options.viewHeight;
-		this.content = options.content;
-		this.content.addChildTo(this);
 		this.label = phina.display.Label(options.label).addChildTo(this);
-		this.view = phina.display.RectangleShape().addChildTo(this);
-		var grad = this.view.canvas.context.createLinearGradient(0, -this.viewHeight / 2, 0, this.viewHeight / 2);
-		grad.addColorStop(0, options.fill);
-		grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
-		this.view.fill = grad;
 	},
 	render: function(canvas) {
 		canvas.clearColor(this.backgroundColor);
