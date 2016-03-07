@@ -11,7 +11,7 @@ phina.define('fly.SceneLoadingScene', {
 
 	load: function(params) {
 		this.label = phina.display.Label({
-			text: 'Loading... ' + 0 + '%',
+			text: 'Loading... 0%',
 			fill: 'hsla(0, 0%, 0%, 0.6)',
 			fontSize: 15,
 		}).addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);

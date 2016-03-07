@@ -21,23 +21,23 @@ phina.define('fly.DirectionShape', {
 
 		if (this.fill) {
 			canvas.fillStyle = this.fill;
-			canvas.beginPath();
-			canvas.moveTo(0, this.height);
-			canvas.lineTo(this.width, -this.height);
-			canvas.lineTo(-this.width, -this.height);
-			canvas.closePath();
-			canvas.fill();
+			canvas.beginPath()
+				.moveTo(0, this.height)
+				.lineTo(this.width, -this.height)
+				.lineTo(-this.width, -this.height)
+				.closePath()
+				.fill();
 		}
 
 		if (this.isStrokable()) {
 			canvas.lineWidth = this.strokeWidth;
 			canvas.strokeStyle = this.stroke;
-			canvas.beginPath();
-			canvas.moveTo(0, this.height);
-			canvas.lineTo(this.width, -this.height);
-			canvas.lineTo(-this.width, -this.height);
-			canvas.closePath();
-			canvas.stroke();
+			canvas.beginPath()
+				.moveTo(0, this.height)
+				.lineTo(this.width, -this.height)
+				.lineTo(-this.width, -this.height)
+				.closePath()
+				.stroke();
 		}
-	},
+	}
 });
