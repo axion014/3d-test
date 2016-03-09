@@ -36,15 +36,38 @@ threeext = {
 		});
 
 		THREE.Mesh.prototype.$safe({
-			rotate : function(x, y, z) {this.quaternion.rotate(x, y, z);},
+			rotate: function(x, y, z) {this.quaternion.rotate(x, y, z);},
 
-			move : function(d) {
+			move: function(d) {
 				this.position.x = d.x;
 				this.position.y = d.y;
 				this.position.z = d.z;
 				return this;
 			}
 		});
+
+		THREE.Mesh.prototype.getter('tweener', function() {
+	    if (!this._tweener) {
+	      this._tweener = phina.accessory.Tweener().attachTo(this);
+	    }
+	    return this._tweener;
+	  });
+
+		(function() {
+	    var methods = [
+	      'addEventListener', 'on',
+	      'removeEventListener', 'off',
+	      'clearEventListener', 'clear',
+	      'hasEventListener', 'has',
+	      'dispatchEvent', 'fire',
+	      'dispatchEventByType', 'flare',
+	    ];
+	    methods.each(function(name) {
+	      THREE.Mesh.prototype.$method(name, phina.app.Element.prototype[name]);
+	    });
+	  })();
+
+		THREE.Mesh.prototype._listeners = {};
 
 		THREE.Vector3.prototype.$safe({
 			className: 'THREE.Vector3'

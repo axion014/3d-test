@@ -1,11 +1,9 @@
 phina.define('fly.MainScene', {
 	superClass: 'fly.SceneLoadingScene',
 
-	frame: 0,
-	stage: 'arcade',
-	difficulty: 1,
-	progress: 0,
-	score: 0,
+	frame: 0, stage: 'arcade',
+	difficulty: 1, progress: 0,
+	score: 0, goaled: false,
 
 	init: function(options) {
 		if (options.stage) {this.stage = options.stage;}
@@ -45,17 +43,22 @@ phina.define('fly.MainScene', {
 				flyer.position.y = 1000;
 				flyer.transparent = true;
 				flyer.opacity = 0.3;
+				flyer.tweener.setUpdateType('fps');
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
 					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
-					av: new THREE.Vector3(), sub1id: 0, sub2id: 1,
+					av: new THREE.Vector3(), sub1id: 0, sub2id: 1, auto: 1,
 					update: function(p, k, s) {
-						var c = 0;
 						this.v += 0.05;
-						c = (p.x - SCREEN_CENTER_X);
+						var c = (p.x - SCREEN_CENTER_X) * (1 - this.auto)
+						 - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(goal.position.x - this.position.x, goal.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
 						this.myrot.z1 += c * 0.00008;
 						this.yo += c * 0.00008;
-						this.row += (p.y - SCREEN_CENTER_Y) * this.ups;
+						var ty = s.goaled ? 1000 : goal.position.y;
+						this.row += ((p.y - SCREEN_CENTER_Y) * (1 - this.auto)
+						 	- Math.max(Math.min((Math.atan2(
+							ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
+						) + this.myrot.x) * 100, 100), -100) * this.auto) * this.ups;
 						if (p.getPointing()) {
 							this.e--;
 							this.v += this.speeds[this.speed];
@@ -201,6 +204,7 @@ phina.define('fly.MainScene', {
 						}
 					}
 				})
+				flyer.tweener.to({auto: 0}, 100);
 				enemyManager.flyer = flyer;
 				sky.update = function() {
 					this.move(flyer.position);
@@ -250,16 +254,18 @@ phina.define('fly.MainScene', {
 						var material = new THREE.ShaderMaterial({
 							transparent: true,
 							uniforms: {
-								tExplosion: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal').get()},
-								time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
+								tex1: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal').get()},
+								tex2: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal_disable').get()},
+								tex1_percentage: {type: "f", value: 0.0}, time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
 							},
 							vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').get(),
-							fragmentShader: phina.asset.AssetManager.get('text', 'expfragshader').get()
+							fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').get()
 						});
 						goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), material).$safe({
 							update: function() {material.uniforms.time.value += 0.005 * Math.random();}
 						});
 						goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
+						goal.size = stage.goal.size;
 						layer.scene.add(goal);
 						var xdist = flyer.position.x / 15 - goal.position.x / 15;
 						var zdist = flyer.position.z / 15 - goal.position.z / 15;
@@ -391,6 +397,7 @@ phina.define('fly.MainScene', {
 
 					this.flare('frame' + this.frame);
 					enemyManager.flare('frame' + this.frame);
+					flyer.flare('enterframe');
 					flyer.update(p, k, this);
 					sky.update();
 					plane.update();
@@ -443,12 +450,17 @@ phina.define('fly.MainScene', {
 						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
 
+					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
+					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 					if (flyer.hp <= 0) {
 						if (this.stage === 'arcade') {
 							this.exit('gameover', {score: this.score});
 						} else {
 							this.exit('gameover', {score: this.score});
 						}
+					} else if ((!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+						flyer.tweener.to({auto: 1}, 60).play();
+						this.goaled = true;
 					}
 
 					this.frame++;

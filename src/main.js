@@ -15,6 +15,7 @@ phina.define('fly.MainSequence', {
 							threetexture: {
 								explode: 'data/images/explosion.png',
 								goal: 'data/images/goal.png',
+								goal_disable: 'data/images/goal_disable.png',
 								plane: 'data/images/3.png'
 							},
 							threecubetex: {
@@ -23,7 +24,8 @@ phina.define('fly.MainSequence', {
 							text: {
 								expvertexshader: 'data/glsl/expvertexshader.min.glsl',
 								expfragshader: 'data/glsl/expfragshader.min.glsl',
-								goalvertexshader: 'data/glsl/goalvertexshader.min.glsl'
+								goalvertexshader: 'data/glsl/goalvertexshader.min.glsl',
+								goalfragshader: 'data/glsl/goalfragshader.min.glsl'
 							}
 						}
 					}
