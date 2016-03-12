@@ -47,6 +47,7 @@ phina.define('fly.EnemyManager', {
 			if (r.boss) {
 				this.scene.bosscoming = true;
 				this.scene.boss = enemy;
+				this.gauge_boss_h.tweener.fadeIn(10).play();
 				this.gauge_boss_h.value = enemy.hp;
 				this.gauge_boss_h.maxValue = enemy.hp;
 			}
