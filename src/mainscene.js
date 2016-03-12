@@ -99,7 +99,7 @@ phina.define('fly.MainScene', {
 						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0); // V Key
 
 						if (this.e > 0) {
-							if (k.getKey(90) && this.s1c === 0) { // Z Key
+							if (k.getKey(90)) { // Z Key
 								this.e -= 2;
 								var rnd1 = this.quaternion.clone();
 								rnd1.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.random() * 0.06 - 0.03));
