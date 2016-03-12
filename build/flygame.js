@@ -10,89 +10,92 @@ var Axis = {
 	z : new THREE.Vector3(0,0,1).normalize()
 };
 
-threeext = {
-	extention: function() {
-		THREE.$extend({
-			$extend: function(a, o) {
-				var arg = Array.prototype.slice.call(arguments);
-				arg.shift();
-				Array.prototype.forEach.call(arg, function(source) {
-					for (var property in source) {
-						if (a[property] && o[property] && o[property].className && o[property].className.substr(0, 6) === 'THREE.') {
-							a[property].copy(o[property]);
-						} else {
-							a[property] = o[property];
-						}
-					}
-				}, this);
-				return a;
-			},
-			$add: function(a, o) {
-				var arg = Array.prototype.slice.call(arguments);
-				arg.shift();
-				Array.prototype.forEach.call(arg, function(source) {
-					for (var property in source) {
-						if (o[property]) {
-
-						} else {
-							if (a[property] && o[property] && o[property].className && o[property].className.substr(0, 6) === 'THREE.') {
-								a[property].add(o[property]);
-							} else {
-								a[property] += o[property];
-							}
-						}
-					}
-				}, this);
-				return a;
-			}
-		});
-
-		THREE.Mesh.prototype.$safe({
-			rotate : function(x, y, z) {this.quaternion.rotate(x, y, z);},
-
-			move : function(d) {
-				this.position.x = d.x;
-				this.position.y = d.y;
-				this.position.z = d.z;
-				return this;
-			}
-		});
-
-		THREE.Vector3.prototype.$safe({
-			className: 'THREE.Vector3'
-		});
-
-		THREE.Quaternion.prototype.$safe({
-			className: 'THREE.Quaternion',
-			rotate : function(x, y, z) {
-				if (x.className === 'THREE.Quaternion') {
-					var qq = x.clone();
-					qq.multiply(this.clone());
-					this.copy(qq);
+var threeext = threeext || {};
+threeext.$method('extention', function() {
+	THREE.$method('$extend', function(a, o) {
+		var arg = Array.prototype.slice.call(arguments);
+		arg.shift();
+		Array.prototype.forEach.call(arg, function(source) {
+			for (var property in source) {
+				if (a[property] && o[property] && o[property].className && o[property].className.substr(0, 6) === 'THREE.') {
+					a[property].copy(o[property]);
 				} else {
-					this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, x));
-					this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, y));
-					this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, z));
+					a[property] = o[property];
 				}
-				return this;
 			}
-		});
-
-		THREE.PerspectiveCamera.prototype.$safe({
-			rotate : function(q) {
-				var qq = q.clone();
-				qq.multiply(this.quaternion.clone());
-				this.quaternion.copy(qq);
-			},
-
-			move : function(d) {
-				this.position.x = d.x;
-				this.position.y = d.y;
-				this.position.z = d.z;
+		}, this);
+		return a;
+	});
+	THREE.$method('$add', function(a, o) {
+		var arg = Array.prototype.slice.call(arguments);
+		arg.shift();
+		Array.prototype.forEach.call(arg, function(source) {
+			for (var property in source) {
+				if (o[property]) {
+				} else {
+					if (a[property] && o[property] && o[property].className && o[property].className.substr(0, 6) === 'THREE.') {
+						a[property].add(o[property]);
+					} else {
+						a[property] += o[property];
+					}
+				}
 			}
-		});
-	}
-}
+		}, this);
+		return a;
+	});
+	THREE.Mesh.prototype.$method('rotate', function(x, y, z) {this.quaternion.rotate(x, y, z);});
+	THREE.Mesh.prototype.$method('move', function(d) {
+		this.position.x = d.x;
+		this.position.y = d.y;
+		this.position.z = d.z;
+		return this;
+	});
+	THREE.Mesh.prototype.getter('tweener', function() {
+    if (!this._tweener) {
+      this._tweener = phina.accessory.Tweener().attachTo(this);
+    }
+    return this._tweener;
+  });
+	(function() {
+	  var methods = [
+	    'addEventListener', 'on',
+	    'removeEventListener', 'off',
+	    'clearEventListener', 'clear',
+	    'hasEventListener', 'has',
+	    'dispatchEvent', 'fire',
+	    'dispatchEventByType', 'flare',
+			'attach', 'attachTo', 'detach',
+	  ];
+	  methods.each(function(name) {
+	    THREE.Mesh.prototype.$method(name, phina.app.Element.prototype[name]);
+	  });
+	})();
+	THREE.Mesh.prototype._listeners = {};
+	THREE.Vector3.prototype.className = 'THREE.Vector3';
+	THREE.Quaternion.prototype.className = 'THREE.Quaternion';
+	THREE.Quaternion.prototype.$method('rotate', function(x, y, z) {
+		if (x.className === 'THREE.Quaternion') {
+			var qq = x.clone();
+			qq.multiply(this.clone());
+			this.copy(qq);
+		} else {
+			this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, x));
+			this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, y));
+			this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, z));
+		}
+		return this;
+	});
+	THREE.PerspectiveCamera.prototype.$method('rotate', function(q) {
+		var qq = q.clone();
+		qq.multiply(this.quaternion.clone());
+		this.quaternion.copy(qq);
+	});
+	THREE.PerspectiveCamera.prototype.$method('move', function(d) {
+		this.position.x = d.x;
+		this.position.y = d.y;
+		this.position.z = d.z;
+	});
+});
 
 phina.define('fly.SimpleUpdater', {
 	superClass: 'phina.app.Element',
@@ -131,25 +134,25 @@ phina.define('fly.DirectionShape', {
 
 		if (this.fill) {
 			canvas.fillStyle = this.fill;
-			canvas.beginPath();
-			canvas.moveTo(0, this.height);
-			canvas.lineTo(this.width, -this.height);
-			canvas.lineTo(-this.width, -this.height);
-			canvas.closePath();
-			canvas.fill();
+			canvas.beginPath()
+				.moveTo(0, this.height)
+				.lineTo(this.width, -this.height)
+				.lineTo(-this.width, -this.height)
+				.closePath()
+				.fill();
 		}
 
 		if (this.isStrokable()) {
 			canvas.lineWidth = this.strokeWidth;
 			canvas.strokeStyle = this.stroke;
-			canvas.beginPath();
-			canvas.moveTo(0, this.height);
-			canvas.lineTo(this.width, -this.height);
-			canvas.lineTo(-this.width, -this.height);
-			canvas.closePath();
-			canvas.stroke();
+			canvas.beginPath()
+				.moveTo(0, this.height)
+				.lineTo(this.width, -this.height)
+				.lineTo(-this.width, -this.height)
+				.closePath()
+				.stroke();
 		}
-	},
+	}
 });
 
 phina.define('fly.asset.ThreeJSON', {
@@ -310,7 +313,7 @@ phina.define('fly.asset.Stage', {
 				stage.winds[i].c = stage.winds[i].color[0] << 16 | stage.winds[i].color[1] << 8 | stage.winds[i].color[2];
 			}
 			for(var i = 0; i < stage.messages.length; i++) {stage.messages[i].$safe({time: 0, text: ''});}
-			stage.goal.$safe({x: 0, y: 0, z: 0, size: 100})
+			stage.goal.$safe({x: 0, y: 0, z: 0, size: 100, kill: 0.9})
 			this.data = stage;
 			resolve(self);
 		}.bind(this))
@@ -374,6 +377,59 @@ fly.colCup2D3 = function(p1, p2, v1, v2, r) {
 	}
 	return df <= r;
 };
+
+phina.define('fly.Popup', {
+	superClass: 'phina.display.Shape',
+	init: function(options) {
+    options = ({}).$safe(options, {
+			backgroundColor: 'transparent',
+			fill: 'hsla(0, 0%, 0%, 0.6)',
+			stroke: null,
+			strokeWidth: 2,
+
+			width: 512,
+			height: 48,
+			sideIndent: 32
+		});
+    this.superInit(options);
+		this.sideIndent = options.sideIndent;
+		this.viewHeight = options.viewHeight;
+		this.label = phina.display.Label(options.label).addChildTo(this);
+	},
+	render: function(canvas) {
+		canvas.clearColor(this.backgroundColor);
+		canvas.transformCenter();
+		var w = this.width / 2;
+		var h = this.height / 2;
+
+		if (this.fill) {
+			canvas.fillStyle = this.fill;
+			canvas.beginPath()
+				.moveTo(-w, -h)
+				.lineTo(this.sideIndent - w, 0)
+				.lineTo(-w, h)
+				.lineTo(w, h)
+				.lineTo(w - this.sideIndent, 0)
+				.lineTo(w, -h)
+				.closePath()
+				.fill();
+		}
+
+		if (this.isStrokable()) {
+			canvas.lineWidth = this.strokeWidth;
+			canvas.strokeStyle = this.stroke;
+			canvas.beginPath()
+				.moveTo(-w, -h)
+				.lineTo(this.sideIndent - w, 0)
+				.lineTo(-w, h)
+				.lineTo(w, h)
+				.lineTo(w - this.sideIndent, 0)
+				.lineTo(w, -h)
+				.closePath()
+				.stroke();
+		}
+	}
+});
 
 phina.define('fly.EffectManager', {
 	superClass: 'fly.SimpleUpdater',
@@ -477,9 +533,8 @@ phina.define('fly.RayManager', {
 phina.define('fly.EnemyManager', {
 	superClass: 'fly.SimpleUpdater',
 
-	definedenemy: [],
-	enemyraders: [],
-	groups: [],
+	definedenemy: [], enemyraders: [], groups: [],
+	killcount: 0, allcount: 0,
 
 	init: function(s, ts, bh, ms) {
 		this.superInit();
@@ -523,6 +578,7 @@ phina.define('fly.EnemyManager', {
 			if (r.boss) {
 				this.scene.bosscoming = true;
 				this.scene.boss = enemy;
+				this.gauge_boss_h.tweener.fadeIn(10).play();
 				this.gauge_boss_h.value = enemy.hp;
 				this.gauge_boss_h.maxValue = enemy.hp;
 			}
@@ -531,10 +587,10 @@ phina.define('fly.EnemyManager', {
 	},
 	createEnemyMulti: function(n, r, as, km) {
 		var autospawn = as.$safe(this.definedenemy[n].autospawn);
+		this.groups.push({num: autospawn.rep, message: km});
 		for(var i = 0; i < autospawn.rep; i++) {
 			var nr = {position: new THREE.Vector3()};
 			THREE.$extend(nr, r);
-			this.groups.push({num: autospawn.rep, message: km});
 			this.createEnemy(n, nr, this.groups.last, autospawn.time, autospawn.progress);
 			if (autospawn.delay) {autospawn.time += autospawn.delay;}
 			THREE.$add(r, autospawn.options);
@@ -543,6 +599,7 @@ phina.define('fly.EnemyManager', {
 				Math.random() * autospawn.random.y * 2 - autospawn.random.y,
 				Math.random() * autospawn.random.z * 2 - autospawn.random.z));
 		}
+		this.allcount += autospawn.rep;
 	},
 
 	update: function() {
@@ -564,6 +621,7 @@ phina.define('fly.EnemyManager', {
 		this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
 		this.scene.score += this.get(i).size;
 		this.get(i).group.num--;
+		this.killcount++;
 		if (this.get(i).group.num === 0) {
 			var text = this.get(i).group.message.text;
 			if (text !== '') {
@@ -790,7 +848,7 @@ phina.define('fly.SceneLoadingScene', {
 
 	load: function(params) {
 		this.label = phina.display.Label({
-			text: 'Loading... ' + 0 + '%',
+			text: 'Loading... 0%',
 			fill: 'hsla(0, 0%, 0%, 0.6)',
 			fontSize: 15,
 		}).addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
@@ -915,11 +973,9 @@ phina.define('fly.GameOverScene', {
 phina.define('fly.MainScene', {
 	superClass: 'fly.SceneLoadingScene',
 
-	frame: 0,
-	stage: 'arcade',
-	difficulty: 1,
-	progress: 0,
-	score: 0,
+	frame: 0, stage: 'arcade',
+	difficulty: 1, progress: 0,
+	score: 0, goaled: false,
 
 	init: function(options) {
 		if (options.stage) {this.stage = options.stage;}
@@ -942,6 +998,12 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
+		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
+		var rates;
+
+		var resultbg = phina.display.RectangleShape({width: 480, strokeWidth: 0});
+		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
+		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
 
 		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
@@ -952,30 +1014,33 @@ phina.define('fly.MainScene', {
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var goal;
 		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
-		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({
-			map: phina.asset.AssetManager.get('threetexture', 'plane').get()
-		}));
+		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
 		this.load([[
 			function(resolve) { // Load Player
 				flyer.position.y = 1000;
 				flyer.transparent = true;
 				flyer.opacity = 0.3;
+				flyer.tweener.setUpdateType('fps');
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
 					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
-					av: new THREE.Vector3(), sub1id: 0, sub2id: 1,
+					av: new THREE.Vector3(), sub1id: 0, sub2id: 1, auto: 1,
 					update: function(p, k, s) {
-						var c = 0;
 						this.v += 0.05;
-						c = (p.x - SCREEN_CENTER_X);
+						var c = (p.x - SCREEN_CENTER_X) * (1 - this.auto)
+						 - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(goal.position.x - this.position.x, goal.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
 						this.myrot.z1 += c * 0.00008;
 						this.yo += c * 0.00008;
-						this.row += (p.y - SCREEN_CENTER_Y) * this.ups;
+						var ty = s.goaled ? 1000 : goal.position.y;
+						this.row += ((p.y - SCREEN_CENTER_Y) * (1 - this.auto)
+						 	- Math.max(Math.min((Math.atan2(
+							ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
+						) + this.myrot.x) * 100, 100), -100) * this.auto) * this.ups;
 						if (p.getPointing()) {
 							this.e--;
 							this.v += this.speeds[this.speed];
 						}
-						if (k.getKeyDown(68)) {
+						if (k.getKeyDown(68)) { // D Key
 							this.speed++;
 							this.speed %= 4;
 							speed.text = 'speed: ' + (this.speed + 1);
@@ -1003,10 +1068,10 @@ phina.define('fly.MainScene', {
 						}
 						this.yo *= 0.95;
 						this.row *= 0.9;
-						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
+						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0); // V Key
 
 						if (this.e > 0) {
-							if (k.getKey(90) && this.s1c === 0) { // Z Key
+							if (k.getKey(90)) { // Z Key
 								this.e -= 2;
 								var rnd1 = this.quaternion.clone();
 								rnd1.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.random() * 0.06 - 0.03));
@@ -1047,6 +1112,9 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
+								if (s.score > 0) {
+									s.score--;
+								}
 								enmBulletManager.removeBullet(i);
 							}
 						}
@@ -1058,6 +1126,9 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
+								if (s.score > 0) {
+									s.score -= 3;
+								}
 								enemyManager.removeEnemy(i);
 							}
 						}
@@ -1116,14 +1187,8 @@ phina.define('fly.MainScene', {
 						}
 					}
 				})
+				flyer.tweener.to({auto: 0}, 200);
 				enemyManager.flyer = flyer;
-				sky.update = function() {
-					this.move(flyer.position);
-				}
-				plane.update = function() {
-					this.position.x = flyer.position.x;
-					this.position.z = flyer.position.z;
-				}
 				resolve();
 			}
 		], [
@@ -1131,6 +1196,7 @@ phina.define('fly.MainScene', {
 				if (this.stage !== 'arcade') {
 					var load = function() {
 						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
+						name.label.text = stage.name;
 						for(var i = 0; i < stage.enemys.length; i++) {
 							if (!enemyManager.definedenemy[stage.enemys[i].name]) {
 								enemyManager.defineEnemy(stage.enemys[i].name);
@@ -1154,33 +1220,41 @@ phina.define('fly.MainScene', {
 										if (stage.messages[tmp].progress < this.progress) {
 											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
 											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
-											this.off('frame', callfunc);
+											this.off('enterframe', callfunc);
 										}
 									}.bind(this);
-									this.on('frame', callfunc);
+									this.on('enterframe', callfunc);
 								}).bind(this)();
 							}
 						}
 						var material = new THREE.ShaderMaterial({
 							transparent: true,
 							uniforms: {
-								tExplosion: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal').get()},
-								time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
+								tex1: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal').get()},
+								tex2: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal_disable').get()},
+								tex1_percentage: phina.app.Element().$safe({type: "f", value: 0.0}).addChildTo(this), time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
 							},
 							vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').get(),
-							fragmentShader: phina.asset.AssetManager.get('text', 'expfragshader').get()
+							fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').get()
 						});
 						goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), material).$safe({
-							update: function() {material.uniforms.time.value += 0.005 * Math.random();}
+							size: stage.goal.size, kill: stage.goal.kill, enable: false,
+							update: function(s) {
+								var enable = s.bossdefeated && enemyManager.killcount > enemyManager.allcount * this.kill;
+								material.uniforms.time.value += 0.005 * Math.random();
+								if ((!this.enable) && enable) {material.uniforms.tex1_percentage.tweener.to({value: 1}, 50).play();}
+								this.enable = enable;
+							}
 						});
+						material.uniforms.tex1_percentage.tweener.setUpdateType('fps');
 						goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
-						layer.scene.add(goal);
 						var xdist = flyer.position.x / 15 - goal.position.x / 15;
 						var zdist = flyer.position.z / 15 - goal.position.z / 15;
 						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader = phina.display.CircleShape({radius: 5, fill: 'hsla(190, 100%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
 							.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+						rates = stage.rate;
 						resolve();
 					}.bind(this);
 				}
@@ -1211,6 +1285,12 @@ phina.define('fly.MainScene', {
 				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.rotation = 180;
 
+				var grad = name.canvas.context.createLinearGradient(0, -name.height / 2, 0, name.height / 2);
+				grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
+				grad.addColorStop(0.5, 'hsla(0, 0%, 0%, 0)');
+				grad.addColorStop(1, 'hsla(0, 0%, 0%, 0.6)');
+				name.fill = grad;
+
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
 						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
@@ -1227,11 +1307,31 @@ phina.define('fly.MainScene', {
 				if (this.stage !== 'arcade') {
 					goalrader.addChildTo(this);
 					gauge_boss_h.addChildTo(this).setPosition(SCREEN_CENTER_X, 20);
+					gauge_boss_h.tweener.setUpdateType('fps');
 					gauge_boss_h.alpha = 0;
 					gauge_boss_h.animation = false;
 					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
 					msgbox.live = 0;
 					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+					name.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+					name.tweener2 = phina.accessory.Tweener().attachTo(name);
+					name.tweener.setUpdateType('fps');
+					name.tweener2.setUpdateType('fps');
+					name.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
+					name.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
+					resultbg.addChildTo(this).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
+					grad = resultbg.canvas.context.createLinearGradient(0, -SCREEN_CENTER_Y, 0, SCREEN_CENTER_Y);
+					grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
+					grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+					resultbg.fill = grad;
+					resulttitle.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resulttext.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resultbg.tweener.setUpdateType('fps');
+					resulttitle.tweener.setUpdateType('fps');
+					resulttext.tweener.setUpdateType('fps');
+					resultbg.alpha = 0;
+					resulttitle.alpha = 0;
+					resulttext.alpha = 0;
 				}
 
 				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
@@ -1243,7 +1343,16 @@ phina.define('fly.MainScene', {
 			}, function(resolve) { // Stage Setup
 				var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 				directionalLight.position.set(0, 0, 30);
+				sky.update = function() {this.move(flyer.position);};
+				plane.update = function() {
+					this.position.x = flyer.position.x;
+					this.position.z = flyer.position.z;
+				};
 				plane.rotate(-Math.PI / 2, 0, 0);
+				if (this.stage !== 'arcade') {
+					goal.tweener.setUpdateType('fps');
+					layer.scene.add(goal);
+				}
 				layer.scene.add(directionalLight);
 				layer.scene.add(new THREE.AmbientLight(0x606060));
 				layer.scene.add(flyer);
@@ -1279,12 +1388,6 @@ phina.define('fly.MainScene', {
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 						enemyManager.flare('frame', {progress: this.progress});
-						this.flare('frame');
-					}
-					for (var i = 0; i < enemyManager.elements.length; i++) {
-						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {
-							enemyManager.removeEnemy(i);
-						}
 					}
 					for (var i = 0; i < enmBulletManager.elements.length; i++) {
 						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
@@ -1294,10 +1397,11 @@ phina.define('fly.MainScene', {
 
 					this.flare('frame' + this.frame);
 					enemyManager.flare('frame' + this.frame);
+					flyer.flare('enterframe');
 					flyer.update(p, k, this);
 					sky.update();
 					plane.update();
-					goal.update();
+					goal.update(this);
 					windManager.flyerposy = flyer.position.y;
 
 					for(var i = 0; i < 4; i++) {
@@ -1319,14 +1423,11 @@ phina.define('fly.MainScene', {
 					if (this.bosscoming) {
 						if (this.boss.parent === null) {
 							this.bosscoming = false;
+							gauge_boss_h.tweener.fadeOut(10).play();
+							this.bossdefeated = true;
 						} else {
 							gauge_boss_h.value = this.boss.hp;
 						}
-						if (gauge_boss_h.alpha < 0.99999) {
-							gauge_boss_h.alpha += 0.1;
-						}
-					} else if (gauge_boss_h.alpha > 0.00001) {
-						gauge_boss_h.alpha -= 0.1;
 					}
 
 					if (k.getKeyDown(90)) {message.text = '';}
@@ -1346,12 +1447,39 @@ phina.define('fly.MainScene', {
 						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
 
+					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
+					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 					if (flyer.hp <= 0) {
 						if (this.stage === 'arcade') {
 							this.exit('gameover', {score: this.score});
 						} else {
 							this.exit('gameover', {score: this.score});
 						}
+					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+						flyer.tweener.to({auto: 1}, 60).play();
+						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+						var rate = '';
+						if (this.score >= rates[2]) {
+							rate = 'Perfect';
+						} else if (this.score >= rates[1]) {
+							rate = 'Good';
+						} else if (this.score >= rates[0]) {
+							rate = 'Middle';
+						} else {
+							rate = 'Bad';
+						}
+						resulttext.text = 'Score: ' + this.score
+							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
+							+ '\nRate: ' + rate
+						message.text = '';
+						this.goaled = true;
+					}
+
+					if (this.frame % 600 === 0 && this.score > 0) {
+						this.score--;
 					}
 
 					this.frame++;
@@ -1379,6 +1507,7 @@ phina.define('fly.MainSequence', {
 							threetexture: {
 								explode: 'data/images/explosion.png',
 								goal: 'data/images/goal.png',
+								goal_disable: 'data/images/goal_disable.png',
 								plane: 'data/images/3.png'
 							},
 							threecubetex: {
@@ -1387,12 +1516,12 @@ phina.define('fly.MainSequence', {
 							text: {
 								expvertexshader: 'data/glsl/expvertexshader.min.glsl',
 								expfragshader: 'data/glsl/expfragshader.min.glsl',
-								goalvertexshader: 'data/glsl/goalvertexshader.min.glsl'
+								goalvertexshader: 'data/glsl/goalvertexshader.min.glsl',
+								goalfragshader: 'data/glsl/goalfragshader.min.glsl'
 							}
 						}
 					}
 				},
-
 				{
 					label: 'title',
 					className: 'fly.TitleScene',
