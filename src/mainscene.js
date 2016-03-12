@@ -215,7 +215,7 @@ phina.define('fly.MainScene', {
 						}
 					}
 				})
-				flyer.tweener.to({auto: 0}, 200);
+				flyer.tweener.to({auto: 0}, 1600);
 				enemyManager.flyer = flyer;
 				resolve();
 			}
