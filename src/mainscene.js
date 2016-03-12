@@ -27,6 +27,8 @@ phina.define('fly.MainScene', {
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
 		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
+		var rates;
+
 		var resultbg = phina.display.RectangleShape({width: 480, strokeWidth: 0});
 		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
 		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
@@ -280,6 +282,7 @@ phina.define('fly.MainScene', {
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader = phina.display.CircleShape({radius: 5, fill: 'hsla(190, 100%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
 							.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+						rates = stage.rate;
 						resolve();
 					}.bind(this);
 				}
@@ -484,10 +487,21 @@ phina.define('fly.MainScene', {
 						flyer.tweener.to({auto: 1}, 60).play();
 						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
 						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y / 2}, 3).play();
+						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+						var rate = '';
+						if (this.score >= rates[2]) {
+							rate = 'Perfect';
+						} else if (this.score >= rates[1]) {
+							rate = 'Good';
+						} else if (this.score >= rates[0]) {
+							rate = 'Middle';
+						} else {
+							rate = 'Bad';
+						}
 						resulttext.text = 'Score: ' + this.score
 							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
+							+ '\nRate: ' + rate
 						message.text = '';
 						this.goaled = true;
 					}
