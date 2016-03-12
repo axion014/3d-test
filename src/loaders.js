@@ -156,7 +156,7 @@ phina.define('fly.asset.Stage', {
 				stage.winds[i].c = stage.winds[i].color[0] << 16 | stage.winds[i].color[1] << 8 | stage.winds[i].color[2];
 			}
 			for(var i = 0; i < stage.messages.length; i++) {stage.messages[i].$safe({time: 0, text: ''});}
-			stage.goal.$safe({x: 0, y: 0, z: 0, size: 100})
+			stage.goal.$safe({x: 0, y: 0, z: 0, size: 100, kill: 0.9})
 			this.data = stage;
 			resolve(self);
 		}.bind(this))

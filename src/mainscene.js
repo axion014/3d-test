@@ -255,11 +255,16 @@ phina.define('fly.MainScene', {
 							fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').get()
 						});
 						goal = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goal.size, 2), material).$safe({
-							update: function() {material.uniforms.time.value += 0.005 * Math.random();}
+							size: stage.goal.size, kill: stage.goal.kill, enable: false,
+							update: function(s) {
+								var enable = s.bossdefeated && enemyManager.killcount > enemyManager.allcount * this.kill;
+								material.uniforms.time.value += 0.005 * Math.random();
+								if ((!this.enable) && enable) {material.uniforms.tex1_percentage.tweener.to({value: 1}, 50).play();}
+								this.enable = enable;
+							}
 						});
 						material.uniforms.tex1_percentage.tweener.setUpdateType('fps');
 						goal.move(new THREE.Vector3(stage.goal.x, stage.goal.y, stage.goal.z));
-						goal.size = stage.goal.size;
 						var xdist = flyer.position.x / 15 - goal.position.x / 15;
 						var zdist = flyer.position.z / 15 - goal.position.z / 15;
 						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
@@ -404,7 +409,7 @@ phina.define('fly.MainScene', {
 					flyer.update(p, k, this);
 					sky.update();
 					plane.update();
-					goal.update();
+					goal.update(this);
 					windManager.flyerposy = flyer.position.y;
 
 					for(var i = 0; i < 4; i++) {
@@ -427,7 +432,7 @@ phina.define('fly.MainScene', {
 						if (this.boss.parent === null) {
 							this.bosscoming = false;
 							gauge_boss_h.tweener.fadeOut(10).play();
-							goal.material.uniforms.tex1_percentage.tweener.to({value: 1}, 50).play();
+							this.bossdefeated = true;
 						} else {
 							gauge_boss_h.value = this.boss.hp;
 						}
@@ -458,8 +463,9 @@ phina.define('fly.MainScene', {
 						} else {
 							this.exit('gameover', {score: this.score});
 						}
-					} else if ((!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 						flyer.tweener.to({auto: 1}, 60).play();
+						message.text = '';
 						this.goaled = true;
 					}
 

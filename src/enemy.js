@@ -1,9 +1,8 @@
 phina.define('fly.EnemyManager', {
 	superClass: 'fly.SimpleUpdater',
 
-	definedenemy: [],
-	enemyraders: [],
-	groups: [],
+	definedenemy: [], enemyraders: [], groups: [],
+	killcount: 0, allcount: 0,
 
 	init: function(s, ts, bh, ms) {
 		this.superInit();
@@ -56,10 +55,10 @@ phina.define('fly.EnemyManager', {
 	},
 	createEnemyMulti: function(n, r, as, km) {
 		var autospawn = as.$safe(this.definedenemy[n].autospawn);
+		this.groups.push({num: autospawn.rep, message: km});
 		for(var i = 0; i < autospawn.rep; i++) {
 			var nr = {position: new THREE.Vector3()};
 			THREE.$extend(nr, r);
-			this.groups.push({num: autospawn.rep, message: km});
 			this.createEnemy(n, nr, this.groups.last, autospawn.time, autospawn.progress);
 			if (autospawn.delay) {autospawn.time += autospawn.delay;}
 			THREE.$add(r, autospawn.options);
@@ -68,6 +67,7 @@ phina.define('fly.EnemyManager', {
 				Math.random() * autospawn.random.y * 2 - autospawn.random.y,
 				Math.random() * autospawn.random.z * 2 - autospawn.random.z));
 		}
+		this.allcount += autospawn.rep;
 	},
 
 	update: function() {
@@ -89,6 +89,7 @@ phina.define('fly.EnemyManager', {
 		this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
 		this.scene.score += this.get(i).size;
 		this.get(i).group.num--;
+		this.killcount++;
 		if (this.get(i).group.num === 0) {
 			var text = this.get(i).group.message.text;
 			if (text !== '') {
