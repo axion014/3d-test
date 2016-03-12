@@ -26,7 +26,10 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
-		var popup = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
+		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
+		var resultbg = phina.display.RectangleShape({width: 480, strokeWidth: 0});
+		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
+		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
 
 		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
@@ -135,6 +138,9 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
+								if (s.score > 0) {
+									s.score--;
+								}
 								enmBulletManager.removeBullet(i);
 							}
 						}
@@ -146,6 +152,9 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
+								if (s.score > 0) {
+									s.score -= 3;
+								}
 								enemyManager.removeEnemy(i);
 							}
 						}
@@ -213,7 +222,7 @@ phina.define('fly.MainScene', {
 				if (this.stage !== 'arcade') {
 					var load = function() {
 						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
-						popup.label.text = stage.name;
+						name.label.text = stage.name;
 						for(var i = 0; i < stage.enemys.length; i++) {
 							if (!enemyManager.definedenemy[stage.enemys[i].name]) {
 								enemyManager.defineEnemy(stage.enemys[i].name);
@@ -301,11 +310,11 @@ phina.define('fly.MainScene', {
 				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.rotation = 180;
 
-				var grad = popup.canvas.context.createLinearGradient(0, -popup.height / 2, 0, popup.height / 2);
+				var grad = name.canvas.context.createLinearGradient(0, -name.height / 2, 0, name.height / 2);
 				grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
 				grad.addColorStop(0.5, 'hsla(0, 0%, 0%, 0)');
 				grad.addColorStop(1, 'hsla(0, 0%, 0%, 0.6)');
-				popup.fill = grad;
+				name.fill = grad;
 
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
@@ -329,12 +338,25 @@ phina.define('fly.MainScene', {
 					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
 					msgbox.live = 0;
 					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
-					popup.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
-					popup.tweener2 = phina.accessory.Tweener().attachTo(popup);
-					popup.tweener.setUpdateType('fps');
-					popup.tweener2.setUpdateType('fps');
-					popup.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
-					popup.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
+					name.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+					name.tweener2 = phina.accessory.Tweener().attachTo(name);
+					name.tweener.setUpdateType('fps');
+					name.tweener2.setUpdateType('fps');
+					name.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
+					name.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
+					resultbg.addChildTo(this).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
+					grad = resultbg.canvas.context.createLinearGradient(0, -SCREEN_CENTER_Y, 0, SCREEN_CENTER_Y);
+					grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
+					grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+					resultbg.fill = grad;
+					resulttitle.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resulttext.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resultbg.tweener.setUpdateType('fps');
+					resulttitle.tweener.setUpdateType('fps');
+					resulttext.tweener.setUpdateType('fps');
+					resultbg.alpha = 0;
+					resulttitle.alpha = 0;
+					resulttext.alpha = 0;
 				}
 
 				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
@@ -391,11 +413,6 @@ phina.define('fly.MainScene', {
 						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 						enemyManager.flare('frame', {progress: this.progress});
-					}
-					for (var i = 0; i < enemyManager.elements.length; i++) {
-						if (enemyManager.get(i).position.clone().sub(flyer.position).length > 2000) {
-							enemyManager.removeEnemy(i);
-						}
 					}
 					for (var i = 0; i < enmBulletManager.elements.length; i++) {
 						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
@@ -465,8 +482,18 @@ phina.define('fly.MainScene', {
 						}
 					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 						flyer.tweener.to({auto: 1}, 60).play();
+						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y / 2}, 3).play();
+						resulttext.text = 'Score: ' + this.score
+							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 						message.text = '';
 						this.goaled = true;
+					}
+
+					if (this.frame % 600 === 0 && this.score > 0) {
+						this.score--;
 					}
 
 					this.frame++;
