@@ -50,6 +50,9 @@ threeext.$method('extention', function() {
 		this.position.z = d.z;
 		return this;
 	});
+	THREE.Mesh.prototype.$method('deepclone', function () {
+		return new this.constructor(this.geometry.clone(), this.material.clone()).copy(this);
+	});
 	THREE.Mesh.prototype.getter('tweener', function() {
     if (!this._tweener) {
       this._tweener = phina.accessory.Tweener().attachTo(this);
@@ -95,6 +98,14 @@ threeext.$method('extention', function() {
 		this.position.y = d.y;
 		this.position.z = d.z;
 	});
+	THREE.MultiMaterial.prototype.accessor('opacity', {
+		set: function(p) {
+			for (var i = 0; i < this.materials.length; i++) {
+				this.materials[i].opacity = p;
+			}
+		},
+		get: function() {return this.materials[0].opacity;}
+  });
 });
 
 phina.define('fly.SimpleUpdater', {
@@ -169,7 +180,7 @@ phina.define('fly.asset.ThreeJSON', {
 			resolve(self);
 		});
 	},
-	get: function() {return this.data.clone();}
+	get: function() {return this.data.deepclone();}
 });
 
 phina.define('fly.asset.ThreeTexture', {
@@ -877,96 +888,52 @@ phina.define('fly.SceneLoadingScene', {
 });
 
 phina.define('fly.TitleScene', {
-	superClass: 'phina.game.TitleScene',
-
-	bgbright: 64,
-
-	init: function(params) {
-		this.superInit(params);
-		this.fromJSON({
-			children: {
-				messageLabel: {
-					className: 'phina.display.Label',
-					arguments: {
-						text: params.message,
-						fill: params.fontColor,
-						stroke: false,
-						fontSize: 24,
-					},
-					x: this.gridX.center(),
-					y: this.gridY.span(12),
-				}
-			}
-		});
-		this.on('pointstart', function() {this.clicked = true;});
-	},
-
-	update: function() {
-		if (this.clicked) {
-			if (this.bgbright === 100) {this.exit();}
-			this.bgbright += 4;
-			this.backgroundColor = 'hsl(200, 80%, ' + this.bgbright + '%)';
-		}
-	}
-
-});
-
-phina.define('fly.GameOverScene', {
 	superClass: 'phina.display.CanvasScene',
 
+	frame: 0,
+
 	init: function(params) {
 		this.superInit(params);
-
-		params = (params || {}).$safe(phina.game.ResultScene.defaults);
-
-		var message = params.message.format(params);
-
-		this.backgroundColor = params.backgroundColor;
-
-		this.fromJSON({
-			children: {
-				scoreText: {
-					className: 'phina.display.Label',
-					arguments: {
-						text: 'score',
-						fill: params.fontColor,
-						stroke: null,
-						fontSize: 48,
-					},
-					x: this.gridX.center(),
-					y: this.gridY.span(4),
-				},
-				scoreLabel: {
-					className: 'phina.display.Label',
-					arguments: {
-						text: '' + params.score,
-						fill: params.fontColor,
-						stroke: null,
-						fontSize: 72,
-					},
-					x: this.gridX.center(),
-					y: this.gridY.span(6),
-				},
-
-				playButton: {
-					className: 'phina.ui.Button',
-					arguments: [{
-						text: 'retry',
-						width: 144,
-						height: 144,
-						fontSize: 45,
-						cornerRadius: 72,
-					}],
-					x: this.gridX.center(),
-					y: this.gridY.span(12),
-
-					interactive: true,
-					onpush: function() {
-						this.exit('main');
-					}.bind(this),
-				},
-			}
-		});
+		var layer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
+		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
+		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
+		flyer.position.y = 1000;
+		var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+		directionalLight.position.set(0, 0, 30);
+		sky.update = function() {this.move(flyer.position);};
+		plane.update = function() {
+			this.position.x = flyer.position.x;
+			this.position.z = flyer.position.z;
+		};
+		plane.rotate(-Math.PI / 2, 0, 0);
+		layer.scene.add(directionalLight);
+		layer.scene.add(new THREE.AmbientLight(0x606060));
+		layer.scene.add(flyer);
+		layer.scene.add(sky);
+		layer.scene.add(plane);
+		layer.update = function(app) { // Update routine
+			// Camera control
+			layer.camera.quaternion.copy(new THREE.Quaternion());
+			layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.sin(this.frame * 0.01) * 0.25));
+			layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, Math.PI + this.frame * 0.005));
+			var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
+			layer.camera.position.copy(flyer.position.clone().add(vec));
+			layer.camera.updateMatrixWorld();
+			this.frame++;
+		}.bind(this);
+		var title = phina.display.Label({
+			text: 'flygame', fill: 'hsla(0, 0%, 0%, 0.6)',
+			stroke: false, fontSize: 64,
+		}).setPosition(this.gridX.center(), this.gridY.span(4));
+		var message = phina.display.Label({
+			text: 'Click start', fill: 'hsla(0, 0%, 0%, 0.6)',
+			stroke: false, fontSize: 24,
+		}).setPosition(this.gridX.center(), this.gridY.span(12));
+		layer.addChildTo(this);
+		title.addChildTo(this);
+		message.addChildTo(this);
+		this.on('pointstart', function() {this.exit();});
 	}
 });
 
@@ -1018,8 +985,7 @@ phina.define('fly.MainScene', {
 		this.load([[
 			function(resolve) { // Load Player
 				flyer.position.y = 1000;
-				flyer.transparent = true;
-				flyer.opacity = 0.3;
+				flyer.material.opacity = 0.3;
 				flyer.tweener.setUpdateType('fps');
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
@@ -1187,7 +1153,7 @@ phina.define('fly.MainScene', {
 						}
 					}
 				})
-				flyer.tweener.to({auto: 0}, 200);
+				flyer.tweener.to({auto: 0}, 750, 'easeInCubic');
 				enemyManager.flyer = flyer;
 				resolve();
 			}
@@ -1450,11 +1416,27 @@ phina.define('fly.MainScene', {
 					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
 					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 					if (flyer.hp <= 0) {
-						if (this.stage === 'arcade') {
-							this.exit('gameover', {score: this.score});
-						} else {
-							this.exit('gameover', {score: this.score});
+						flyer.tweener.to({auto: 1}, 60).play();
+						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+						resulttext.text = 'Score: ' + this.score
+							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+						if (this.stage !== 'arcade') {
+							var rate = '';
+							if (this.score >= rates[2]) {
+								rate = 'Perfect';
+							} else if (this.score >= rates[1]) {
+								rate = 'Good';
+							} else if (this.score >= rates[0]) {
+								rate = 'Middle';
+							} else {
+								rate = 'Bad';
+							}
+							resulttext.text += '\nRate: ' + rate;
 						}
+						resulttitle.text = 'Game Over';
+						message.text = '';
 					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 						flyer.tweener.to({auto: 1}, 60).play();
 						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
@@ -1473,7 +1455,7 @@ phina.define('fly.MainScene', {
 						resulttext.text = 'Score: ' + this.score
 							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
-							+ '\nRate: ' + rate
+							+ '\nRate: ' + rate;
 						message.text = '';
 						this.goaled = true;
 					}
@@ -1525,12 +1507,6 @@ phina.define('fly.MainSequence', {
 				{
 					label: 'title',
 					className: 'fly.TitleScene',
-					arguments: {
-						title: 'flight game',
-						message: 'Click start',
-						fontColor: '#fff',
-						exitType: 'click'
-					}
 				},
 				{
 					label: 'main',
@@ -1538,12 +1514,8 @@ phina.define('fly.MainSequence', {
 					arguments: {
 						stage: 'tutorial'
 					}
-				},
-				{
-					label: 'gameover',
-					className: 'fly.GameOverScene'
 				}
-			],
+			]
 		});
 	}
 });
