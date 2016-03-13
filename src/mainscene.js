@@ -214,7 +214,7 @@ phina.define('fly.MainScene', {
 						}
 					}
 				})
-				flyer.tweener.to({auto: 0}, 1600);
+				flyer.tweener.to({auto: 0}, 750, 'easeInCubic');
 				enemyManager.flyer = flyer;
 				resolve();
 			}
@@ -500,7 +500,7 @@ phina.define('fly.MainScene', {
 						resulttext.text = 'Score: ' + this.score
 							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
-							+ '\nRate: ' + rate
+							+ '\nRate: ' + rate;
 						message.text = '';
 						this.goaled = true;
 					}
