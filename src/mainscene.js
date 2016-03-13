@@ -504,6 +504,7 @@ phina.define('fly.MainScene', {
 							} else {
 								rate = 'Bad';
 							}
+							this.score += rates[0] * flyer.hp / 1000;
 							resulttext.text = 'Score: ' + this.score
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
