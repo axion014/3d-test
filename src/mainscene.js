@@ -477,11 +477,27 @@ phina.define('fly.MainScene', {
 					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
 					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 					if (flyer.hp <= 0) {
-						if (this.stage === 'arcade') {
-							this.exit('gameover', {score: this.score});
-						} else {
-							this.exit('gameover', {score: this.score});
+						flyer.tweener.to({auto: 1}, 60).play();
+						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+						resulttext.text = 'Score: ' + this.score
+							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+						if (this.stage !== 'arcade') {
+							var rate = '';
+							if (this.score >= rates[2]) {
+								rate = 'Perfect';
+							} else if (this.score >= rates[1]) {
+								rate = 'Good';
+							} else if (this.score >= rates[0]) {
+								rate = 'Middle';
+							} else {
+								rate = 'Bad';
+							}
+							resulttext.text += '\nRate: ' + rate;
 						}
+						resulttitle.text = 'Game Over';
+						message.text = '';
 					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 						flyer.tweener.to({auto: 1}, 60).play();
 						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();

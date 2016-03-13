@@ -40,12 +40,8 @@ phina.define('fly.MainSequence', {
 					arguments: {
 						stage: 'tutorial'
 					}
-				},
-				{
-					label: 'gameover',
-					className: 'fly.GameOverScene'
 				}
-			],
+			]
 		});
 	}
 });

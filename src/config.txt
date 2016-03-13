@@ -13,6 +13,5 @@ loadingscene.js
 splashloadingscene.js
 sceneloadingscene.js
 titlescene.js
-gameoverscene.js
 mainscene.js
 main.js
