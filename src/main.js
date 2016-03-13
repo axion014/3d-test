@@ -33,12 +33,6 @@ phina.define('fly.MainSequence', {
 				{
 					label: 'title',
 					className: 'fly.TitleScene',
-					arguments: {
-						title: 'flight game',
-						message: 'Click start',
-						fontColor: '#fff',
-						exitType: 'click'
-					}
 				},
 				{
 					label: 'main',

@@ -38,6 +38,9 @@ threeext.$method('extention', function() {
 		this.position.z = d.z;
 		return this;
 	});
+	THREE.Mesh.prototype.$method('deepclone', function () {
+		return new this.constructor(this.geometry.clone(), this.material.clone()).copy(this);
+	});
 	THREE.Mesh.prototype.getter('tweener', function() {
     if (!this._tweener) {
       this._tweener = phina.accessory.Tweener().attachTo(this);
@@ -83,4 +86,12 @@ threeext.$method('extention', function() {
 		this.position.y = d.y;
 		this.position.z = d.z;
 	});
+	THREE.MultiMaterial.prototype.accessor('opacity', {
+		set: function(p) {
+			for (var i = 0; i < this.materials.length; i++) {
+				this.materials[i].opacity = p;
+			}
+		},
+		get: function() {return this.materials[0].opacity;}
+  });
 });

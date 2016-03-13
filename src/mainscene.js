@@ -46,8 +46,7 @@ phina.define('fly.MainScene', {
 		this.load([[
 			function(resolve) { // Load Player
 				flyer.position.y = 1000;
-				flyer.transparent = true;
-				flyer.opacity = 0.3;
+				flyer.material.opacity = 0.3;
 				flyer.tweener.setUpdateType('fps');
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},

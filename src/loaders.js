@@ -12,7 +12,7 @@ phina.define('fly.asset.ThreeJSON', {
 			resolve(self);
 		});
 	},
-	get: function() {return this.data.clone();}
+	get: function() {return this.data.deepclone();}
 });
 
 phina.define('fly.asset.ThreeTexture', {
