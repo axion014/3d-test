@@ -388,76 +388,135 @@ phina.define('fly.MainScene', {
 				resolve();
 			}, function(resolve) {
 				layer.update = function(app) { // Update routine
-					var p = app.pointer;
-					var k = app.keyboard;
-					if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
-						var rand = Math.random();
-						if (rand > 0.98 && enemyManager.count() < 100) {
-							if (rand < 0.995) {
-								var enmname = 'enem1';
-							} else if (rand < 0.9975) {
-								var enmname = 'enem2';
-							} else {
-								var enmname = 'enem3';
+					if (flyer) {
+						var p = app.pointer;
+						var k = app.keyboard;
+						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
+							var rand = Math.random();
+							if (rand > 0.98 && enemyManager.count() < 100) {
+								if (rand < 0.995) {
+									var enmname = 'enem1';
+								}	else if (rand < 0.9975) {
+									var enmname = 'enem2';
+								} else {
+									var enmname = 'enem3';
+								}
+								enemyManager.createEnemyMulti(enmname, {
+									position: new THREE.Vector3(Math.randint(-500, 500), Math.randint(500, 5000), Math.randint(-500, 500)).add(flyer.position),
+									quaternion: new THREE.Quaternion().rotate(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2)
+								}, {random: {x: 5, y: 5, z: 5}});
 							}
-							enemyManager.createEnemyMulti(enmname, {
-								position: new THREE.Vector3(Math.randint(-500, 500), Math.randint(500, 5000), Math.randint(-500, 500)).add(flyer.position),
-								quaternion: new THREE.Quaternion().rotate(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2)
-							}, {random: {x: 5, y: 5, z: 5}});
-						}
-						this.difficulty += 0.0001;
-						if (enemyManager.count() > 50) {enemyManager.removeEnemy(0);}
-					} else {
-						this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
-						var xdist = flyer.position.x / 15 - goal.position.x / 15;
-						var zdist = flyer.position.z / 15 - goal.position.z / 15;
-						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
-						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
-						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
-						enemyManager.flare('frame', {progress: this.progress});
-					}
-					for (var i = 0; i < enmBulletManager.elements.length; i++) {
-						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
-							enmBulletManager.removeBullet(i);
-						}
-					}
-
-					this.flare('frame' + this.frame);
-					enemyManager.flare('frame' + this.frame);
-					flyer.flare('enterframe');
-					flyer.update(p, k, this);
-					sky.update();
-					plane.update();
-					goal.update(this);
-					windManager.flyerposy = flyer.position.y;
-
-					for(var i = 0; i < 4; i++) {
-						var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
-						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
-							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
-						direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
-					}
-
-					// Camera control
-					layer.camera.quaternion.copy(new THREE.Quaternion());
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-					var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
-					layer.camera.position.copy(flyer.position.clone().add(vec));
-					layer.camera.updateMatrixWorld();
-
-					if (this.bosscoming) {
-						if (this.boss.parent === null) {
-							this.bosscoming = false;
-							gauge_boss_h.tweener.fadeOut(10).play();
-							this.bossdefeated = true;
+							this.difficulty += 0.0001;
+							if (enemyManager.count() > 50) {enemyManager.removeEnemy(0);}
 						} else {
-							gauge_boss_h.value = this.boss.hp;
+							this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
+							var xdist = flyer.position.x / 15 - goal.position.x / 15;
+							var zdist = flyer.position.z / 15 - goal.position.z / 15;
+							var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
+							var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
+							goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+							enemyManager.flare('frame', {progress: this.progress});
 						}
-					}
+						for (var i = 0; i < enmBulletManager.elements.length; i++) {
+							if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
+								enmBulletManager.removeBullet(i);
+							}
+						}
 
-					if (k.getKeyDown(90)) {message.text = '';}
+						this.flare('frame' + this.frame);
+						enemyManager.flare('frame' + this.frame);
+						flyer.flare('enterframe');
+						flyer.update(p, k, this);
+						sky.update();
+						plane.update();
+						goal.update(this);
+						windManager.flyerposy = flyer.position.y;
+
+						for(var i = 0; i < 4; i++) {
+							var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
+							direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
+								SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
+								direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
+						}
+
+						// Camera control
+						layer.camera.quaternion.copy(new THREE.Quaternion());
+						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
+						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
+						var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
+						layer.camera.position.copy(flyer.position.clone().add(vec));
+						layer.camera.updateMatrixWorld();
+
+						if (this.bosscoming) {
+							if (this.boss.parent === null) {
+								this.bosscoming = false;
+								gauge_boss_h.tweener.fadeOut(10).play();
+								this.bossdefeated = true;
+							} else {
+								gauge_boss_h.value = this.boss.hp;
+							}
+						}
+
+						if (k.getKeyDown(90)) {message.text = '';}
+
+						var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
+						var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
+						if (flyer.hp <= 0) {
+							enemyManager.effectmanager.explode(flyer.position, 10, 30);
+							layer.scene.remove(flyer);
+							flyer = null;
+							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+							resulttext.text = 'Score: ' + this.score
+								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+							if (this.stage !== 'arcade') {
+								var rate = '';
+								if (this.score >= rates[2]) {
+									rate = 'Perfect';
+								} else if (this.score >= rates[1]) {
+									rate = 'Good';
+								} else if (this.score >= rates[0]) {
+									rate = 'Middle';
+								} else {
+									rate = 'Bad';
+								}
+								resulttext.text += '\nRate: ' + rate;
+							}
+							resulttitle.text = 'Game Over';
+							message.text = '';
+						} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+							flyer.tweener.to({auto: 1}, 60).play();
+							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+							var rate = '';
+							if (this.score >= rates[2]) {
+								rate = 'Perfect';
+							} else if (this.score >= rates[1]) {
+								rate = 'Good';
+							} else if (this.score >= rates[0]) {
+								rate = 'Middle';
+							} else {
+								rate = 'Bad';
+							}
+							resulttext.text = 'Score: ' + this.score
+								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
+								+ '\nRate: ' + rate;
+							message.text = '';
+							this.goaled = true;
+						}
+
+						if (this.frame % 600 === 0 && this.score > 0) {
+							this.score--;
+						}
+
+						this.frame++;
+					} else {
+						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
+					}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
 							msgbox.live += 0.5;
@@ -473,59 +532,6 @@ phina.define('fly.MainScene', {
 						msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 5 * msgbox.live;
 						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
-
-					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
-					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
-					if (flyer.hp <= 0) {
-						flyer.tweener.to({auto: 1}, 60).play();
-						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
-						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-						resulttext.text = 'Score: ' + this.score
-							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-						if (this.stage !== 'arcade') {
-							var rate = '';
-							if (this.score >= rates[2]) {
-								rate = 'Perfect';
-							} else if (this.score >= rates[1]) {
-								rate = 'Good';
-							} else if (this.score >= rates[0]) {
-								rate = 'Middle';
-							} else {
-								rate = 'Bad';
-							}
-							resulttext.text += '\nRate: ' + rate;
-						}
-						resulttitle.text = 'Game Over';
-						message.text = '';
-					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
-						flyer.tweener.to({auto: 1}, 60).play();
-						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
-						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-						var rate = '';
-						if (this.score >= rates[2]) {
-							rate = 'Perfect';
-						} else if (this.score >= rates[1]) {
-							rate = 'Good';
-						} else if (this.score >= rates[0]) {
-							rate = 'Middle';
-						} else {
-							rate = 'Bad';
-						}
-						resulttext.text = 'Score: ' + this.score
-							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
-							+ '\nRate: ' + rate;
-						message.text = '';
-						this.goaled = true;
-					}
-
-					if (this.frame % 600 === 0 && this.score > 0) {
-						this.score--;
-					}
-
-					this.frame++;
 				}.bind(this);
 				resolve();
 			}
