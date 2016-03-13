@@ -159,6 +159,9 @@ phina.define('fly.MainScene', {
 								enemyManager.removeEnemy(i);
 							}
 						}
+						if (this.position.y <= 0) {
+							this.hp = 0;
+						}
 					},
 					sub: [
 						function() {
