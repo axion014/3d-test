@@ -92,9 +92,10 @@ phina.define('fly.EnemyManager', {
 		this.killcount++;
 		if (this.get(i).group.num === 0) {
 			var text = this.get(i).group.message.text;
+			if (this.get(i).group.message.offkill) {this.message.text = '';}
 			if (text !== '') {
-				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = ''}.bind(this));
-				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text}.bind(this));
+				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = '';}.bind(this));
+				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text;}.bind(this));
 			}
 		}
 		this.get(i).parent.remove(this.get(i));

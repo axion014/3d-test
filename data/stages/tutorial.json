@@ -15,13 +15,15 @@
 			"autospawn": {
 				"random": {"x": 50, "y": 50, "z": 50},
 				"progress": 0.2
-			}
+			},
+			"killmes": {"offkill": true}
 		},
 		{
 			"name": "enem1",
 			"position": {"x": 2680, "y": 600, "z": 2400},
 			"option": {"v": 0.8, "chase": 0.2, "mindist": 120},
-			"autospawn": {"progress": 0.4}
+			"autospawn": {"progress": 0.4},
+			"killmes": {"offkill": true}
 		},
 		{
 			"name": "enem1",
@@ -33,7 +35,8 @@
 				"progress": 0.6,
 				"delay": 5,
 				"rep": 20
-			}
+			},
+			"killmes": {"offkill": true}
 		},
 		{
 			"name": "enem3",
@@ -41,7 +44,7 @@
 			"rotation": {"x": 0.1, "y": -0.2},
 			"option": {"boss": true},
 			"autospawn": {"progress": 0.8},
-			"killmes": {"time": 50, "text": "ゴールが出現しました。突入してください。"}
+			"killmes": {"time": 50, "text": "ゴールが出現しました。突入してください。", "offkill": true}
 		}
 	],
 	"messages": [

@@ -139,9 +139,7 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
-								if (s.score > 0) {
-									s.score--;
-								}
+								s.score--;
 								enmBulletManager.removeBullet(i);
 							}
 						}
@@ -153,15 +151,11 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
-								if (s.score > 0) {
-									s.score -= 3;
-								}
+								s.score -= 3;
 								enemyManager.removeEnemy(i);
 							}
 						}
-						if (this.position.y <= 0) {
-							this.hp = 0;
-						}
+						if (this.position.y <= 0) {this.hp = 0;}
 					},
 					sub: [
 						function() {
@@ -439,7 +433,7 @@ phina.define('fly.MainScene', {
 							var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
 							direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
 								SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
-								direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
+							direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
 						}
 
 						// Camera control
@@ -461,7 +455,7 @@ phina.define('fly.MainScene', {
 							}
 						}
 
-						if (k.getKeyDown(90)) {message.text = '';}
+						if (k.getKeyDown(32)) {message.text = '';} // Space Key
 
 						var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
 						var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
@@ -474,19 +468,6 @@ phina.define('fly.MainScene', {
 							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
 							resulttext.text = 'Score: ' + this.score
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-							if (this.stage !== 'arcade') {
-								var rate = '';
-								if (this.score >= rates[2]) {
-									rate = 'Perfect';
-								} else if (this.score >= rates[1]) {
-									rate = 'Good';
-								} else if (this.score >= rates[0]) {
-									rate = 'Middle';
-								} else {
-									rate = 'Bad';
-								}
-								resulttext.text += '\nRate: ' + rate;
-							}
 							resulttitle.text = 'Game Over';
 							message.text = '';
 						} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
@@ -505,6 +486,7 @@ phina.define('fly.MainScene', {
 								rate = 'Bad';
 							}
 							this.score += rates[0] * flyer.hp / 1000;
+							if (this.score < 0) {this.score = 0;}
 							resulttext.text = 'Score: ' + this.score
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
@@ -513,9 +495,7 @@ phina.define('fly.MainScene', {
 							this.goaled = true;
 						}
 
-						if (this.frame % 600 === 0 && this.score > 0) {
-							this.score--;
-						}
+						if (this.frame % 600 === 0) {this.score--;}
 
 						this.frame++;
 					} else {
