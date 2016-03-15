@@ -6,13 +6,13 @@ phina.namespace(function() {
     /**
      * 子孫要素の描画の面倒を自分で見る
      */
-    childrenVisible: false,
+    renderChildBySelf: true,
 
     /** 子孫要素を普通に描画するためのキャンバス */
     canvas2d: null,
     /** canvas2dに描画するレンダラー */
     renderer2d: null,
-    /** 
+    /**
      * canvas2dの内容をWebGLテクスチャとして使うためのキャンバス
      * 幅と高さが2の累乗
      */
@@ -57,8 +57,7 @@ phina.namespace(function() {
 
       this.headNode = phina.glfilter.SceneRenderNode(gl);
       this.destNode = phina.glfilter.DestinationNode(gl, {
-        width: size,
-        height: size
+        width: size, height: size
       });
 
       this.headNode.connectTo(this.destNode);
@@ -83,42 +82,22 @@ phina.namespace(function() {
         }
       }
 
-      // 描画したcanvasの内容をtextureCanvasへリサイズして転写
+      // 描画したcanvasの内容をtextureCanvasへ転写
       var c2d = this.canvas2d.domElement;
-      if (c2d.width < c2d.height) {
-        var destWidth = tex.width * c2d.height / tex.height;
-        tex.context.drawImage(
-          c2d,
-          0, 0, c2d.width, c2d.height, (tex.width - destWidth) * 0.5, 0, destWidth, tex.height
-        );
-      } else {
-        var destHeight = tex.height * c2d.width / tex.width;
-        tex.context.drawImage(
-          c2d,
-          0, 0, c2d.width, c2d.height,
-          0, (tex.height - destHeight) * 0.5, tex.width, destHeight
-        );
-      }
+      tex.context.drawImage(
+        c2d, 0, 0, c2d.width, c2d.height, 0,
+				0, c2d.width, c2d.height
+      );
 
       // WebGL描画
       this.headNode.render(this.gl, tex.domElement);
 
       // glに描いたものをcanvasに転写
       var glcanvas = this.domElement;
-      if (c2d.width < c2d.height) {
-        var srcWidth = tex.width * c2d.height / tex.height;
-        canvas.context.drawImage(
-          glcanvas, (tex.width - srcWidth) * 0.5, 0, srcWidth, tex.height,
-          0, 0, canvas.width, canvas.height
-        );
-      } else {
-        var srcHeight = tex.height * c2d.width / tex.width;
-        canvas.context.drawImage(
-          glcanvas,
-          0, (tex.height - srcHeight) * 0.5, tex.width, srcHeight,
-          0, 0, canvas.width, canvas.height
-        );
-      }
+      canvas.context.drawImage(
+        glcanvas, 0, 0,
+				c2d.width, c2d.height, 0, 0, canvas.width, canvas.height
+      );
     },
 
     _static: {

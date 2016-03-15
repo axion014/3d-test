@@ -10,7 +10,8 @@ phina.define('fly.MainScene', {
 		if (options.difficulty) {this.difficulty = options.difficulty;}
 		this.superInit();
 		// Variables
-		var layer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 
 		var map = phina.display.CircleShape({radius: 75, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: null});
 		var playerpos = fly.DirectionShape({
@@ -33,11 +34,11 @@ phina.define('fly.MainScene', {
 		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
 		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
 
-		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
+		var enemyManager = fly.EnemyManager(this, threelayer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
-		var enmBulletManager = fly.BulletManager(layer.scene);
+		var enmBulletManager = fly.BulletManager(threelayer.scene);
 		enemyManager.enmBulletManager = enmBulletManager;
-		var windManager = fly.WindManager(layer.scene);
+		var windManager = fly.WindManager(threelayer.scene);
 
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var goal;
@@ -305,8 +306,19 @@ phina.define('fly.MainScene', {
 		], [
 			function(resolve) { // Screen Setup
 				layer.addChildTo(this);
-				map.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
-				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				layer.alphaNode = phina.glfilter.AlphaNode(layer.gl);
+				var setalpha = function() {
+					layer.alphaNode.setUniform(layer.gl, 'color', [0, 0, 0, 1 - this.frame * 0.025])
+					if (this.frame === 40) {
+						layer.headNode.connectTo(layer.destNode);
+						this.off('enterframe', setalpha);
+					}
+				}.bind(this);
+				this.on('enterframe', setalpha);
+				layer.headNode.connectTo(layer.alphaNode).connectTo(layer.destNode);
+				threelayer.addChildTo(layer);
+				map.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				playerpos.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.rotation = 180;
 
 				var grad = name.canvas.context.createLinearGradient(0, -name.height / 2, 0, name.height / 2);
@@ -318,38 +330,38 @@ phina.define('fly.MainScene', {
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
 						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
-					}).addChildTo(this)
+					}).addChildTo(layer)
 						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
 					direction[i].rotation = -i * 90;
 				}
 
-				gauge_h.addChildTo(this).setPosition(80, SCREEN_HEIGHT - 100);
+				gauge_h.addChildTo(layer).setPosition(80, SCREEN_HEIGHT - 100);
 				gauge_h.animation = false;
-				gauge_e.addChildTo(this);
+				gauge_e.addChildTo(layer);
 				gauge_e.animation = false;
 				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
 				if (this.stage !== 'arcade') {
-					goalrader.addChildTo(this);
-					gauge_boss_h.addChildTo(this).setPosition(SCREEN_CENTER_X, 20);
+					goalrader.addChildTo(layer);
+					gauge_boss_h.addChildTo(layer).setPosition(SCREEN_CENTER_X, 20);
 					gauge_boss_h.tweener.setUpdateType('fps');
 					gauge_boss_h.alpha = 0;
 					gauge_boss_h.animation = false;
-					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+					msgbox.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
 					msgbox.live = 0;
-					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
-					name.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+					message.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
+					name.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
 					name.tweener2 = phina.accessory.Tweener().attachTo(name);
 					name.tweener.setUpdateType('fps');
 					name.tweener2.setUpdateType('fps');
 					name.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
 					name.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
-					resultbg.addChildTo(this).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
+					resultbg.addChildTo(layer).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
 					grad = resultbg.canvas.context.createLinearGradient(0, -SCREEN_CENTER_Y, 0, SCREEN_CENTER_Y);
 					grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
 					grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
 					resultbg.fill = grad;
-					resulttitle.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
-					resulttext.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resulttitle.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
+					resulttext.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
 					resultbg.tweener.setUpdateType('fps');
 					resulttitle.tweener.setUpdateType('fps');
 					resulttext.tweener.setUpdateType('fps');
@@ -375,19 +387,19 @@ phina.define('fly.MainScene', {
 				plane.rotate(-Math.PI / 2, 0, 0);
 				if (this.stage !== 'arcade') {
 					goal.tweener.setUpdateType('fps');
-					layer.scene.add(goal);
+					threelayer.scene.add(goal);
 				}
-				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060));
-				layer.scene.add(flyer);
-				layer.scene.add(sky);
-				layer.scene.add(plane);
+				threelayer.scene.add(directionalLight);
+				threelayer.scene.add(new THREE.AmbientLight(0x606060));
+				threelayer.scene.add(flyer);
+				threelayer.scene.add(sky);
+				threelayer.scene.add(plane);
 				resolve();
 			}, function(resolve) {
-				layer.update = function(app) { // Update routine
+				threelayer.update = function(app) { // Update routine
+					var p = app.pointer;
+					var k = app.keyboard;
 					if (flyer) {
-						var p = app.pointer;
-						var k = app.keyboard;
 						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
 							var rand = Math.random();
 							if (rand > 0.98 && enemyManager.count() < 100) {
@@ -437,13 +449,13 @@ phina.define('fly.MainScene', {
 						}
 
 						// Camera control
-						layer.camera.quaternion.copy(new THREE.Quaternion());
-						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
-						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
-						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-						var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
-						layer.camera.position.copy(flyer.position.clone().add(vec));
-						layer.camera.updateMatrixWorld();
+						threelayer.camera.quaternion.copy(new THREE.Quaternion());
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						threelayer.camera.position.copy(flyer.position.clone().add(vec));
+						threelayer.camera.updateMatrixWorld();
 
 						if (this.bosscoming) {
 							if (this.boss.parent === null) {
@@ -461,7 +473,7 @@ phina.define('fly.MainScene', {
 						var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
 						if (flyer.hp <= 0) {
 							enemyManager.effectmanager.explode(flyer.position, 10, 30);
-							layer.scene.remove(flyer);
+							threelayer.scene.remove(flyer);
 							flyer = null;
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
 							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
@@ -499,7 +511,7 @@ phina.define('fly.MainScene', {
 
 						this.frame++;
 					} else {
-						layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
 					}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
