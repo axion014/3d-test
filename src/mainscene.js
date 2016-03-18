@@ -445,6 +445,7 @@ phina.define('fly.MainScene', {
 								enmBulletManager.removeBullet(i);
 							}
 						}
+						if (enmBulletManager.count() > 500) {for(var i = 0; enmBulletManager.count() > 500; i++) {enmBulletManager.removeBullet(0);}}
 
 						this.flare('frame' + this.frame);
 						enemyManager.flare('frame' + this.frame);
