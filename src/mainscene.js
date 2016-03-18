@@ -59,10 +59,10 @@ phina.define('fly.MainScene', {
 						 - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(goal.position.x - this.position.x, goal.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
 						this.myrot.z1 += c * 0.00008;
 						this.yo += c * 0.00008;
-						var ty = s.goaled ? 1000 : goal.position.y;
+						var ty = s.goaled ? 50 : 0;
 						this.row += ((p.y - SCREEN_CENTER_Y) * (1 - this.auto)
 						 	- Math.max(Math.min((Math.atan2(
-							ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
+							goal.position.y + ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
 						) + this.myrot.x) * 100, 100), -100) * this.auto) * this.ups;
 						if (p.getPointing()) {
 							this.e--;
@@ -310,14 +310,16 @@ phina.define('fly.MainScene', {
 					width: layer.domElement.width, height: layer.domElement.height
 				});
 				var setalpha = function() {
-					layer.alphaNode.setUniform(layer.gl, 'color', [0, 0, 0, 1 - this.frame * 0.025])
+					layer.alphaNode.setUniform(layer.gl, 'color', [1, 1, 1, 1 - this.frame * 0.025]);
 					if (this.frame === 40) {
 						layer.headNode.connectTo(layer.destNode);
 						this.off('enterframe', setalpha);
 					}
 				}.bind(this);
 				this.on('enterframe', setalpha);
-				layer.headNode.connectTo(layer.alphaNode).connectTo(layer.destNode);
+				layer.headNode
+					.connectTo(layer.alphaNode)
+					.connectTo(layer.destNode);
 				threelayer.addChildTo(layer);
 				map.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
@@ -372,7 +374,7 @@ phina.define('fly.MainScene', {
 					resulttext.alpha = 0;
 				}
 
-				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
+				speed.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 
 				enemyManager.addChildTo(this);
 				enmBulletManager.addChildTo(this);
@@ -401,7 +403,21 @@ phina.define('fly.MainScene', {
 				threelayer.update = function(app) { // Update routine
 					var p = app.pointer;
 					var k = app.keyboard;
-					if (flyer) {
+					if (!flyer) {
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
+					} else if (this.goaled) {
+						flyer.flare('enterframe');
+						flyer.update(p, k, this);
+						sky.update();
+						plane.update();
+						// Camera control
+						threelayer.camera.quaternion.copy(new THREE.Quaternion());
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						threelayer.camera.position.copy(flyer.position.clone().add(vec));
+					} else {
 						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
 							var rand = Math.random();
 							if (rand > 0.98 && enemyManager.count() < 100) {
@@ -457,7 +473,6 @@ phina.define('fly.MainScene', {
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
 						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
 						threelayer.camera.position.copy(flyer.position.clone().add(vec));
-						threelayer.camera.updateMatrixWorld();
 
 						if (this.bosscoming) {
 							if (this.boss.parent === null) {
@@ -484,7 +499,7 @@ phina.define('fly.MainScene', {
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							resulttitle.text = 'Game Over';
 							message.text = '';
-						} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+						} else if (goal.enable && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 							flyer.tweener.to({auto: 1}, 60).play();
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
 							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
@@ -512,8 +527,6 @@ phina.define('fly.MainScene', {
 						if (this.frame % 600 === 0) {this.score--;}
 
 						this.frame++;
-					} else {
-						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
 					}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
@@ -530,6 +543,7 @@ phina.define('fly.MainScene', {
 						msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 5 * msgbox.live;
 						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
+					threelayer.camera.updateMatrixWorld();
 				}.bind(this);
 				resolve();
 			}

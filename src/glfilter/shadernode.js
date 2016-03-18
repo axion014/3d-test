@@ -44,8 +44,8 @@ phina.namespace(function() {
     getUniformData: function() {
       return [{
         name: "texture0",
-        type: "texture",
-      }, ];
+        type: "texture"
+      }];
     },
 
     /** for override */
@@ -198,10 +198,8 @@ phina.namespace(function() {
 
     _static: {
       defaultParams: {
-
         width: 512,
         height: 512,
-
       }
     }
 

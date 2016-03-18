@@ -26,7 +26,7 @@ phina.namespace(function() {
 
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      
+
       if (this.nextNode) {
         this.nextNode.render(gl, this.screen);
       }
