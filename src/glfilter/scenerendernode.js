@@ -1,13 +1,13 @@
 phina.namespace(function() {
-  
+
   phina.define("phina.glfilter.SceneRenderNode", {
     superClass: "phina.glfilter.ShaderNode",
-    
-    init: function(gl) {
-      this.superInit(gl);
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
       this.texture0 = gl.createTexture();
     },
-    
+
     /**
      * @param  {HTMLCanvasElement} texture
      */

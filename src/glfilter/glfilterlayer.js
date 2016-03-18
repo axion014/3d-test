@@ -55,7 +55,9 @@ phina.namespace(function() {
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-      this.headNode = phina.glfilter.SceneRenderNode(gl);
+      this.headNode = phina.glfilter.SceneRenderNode(gl, {
+				width: size, height: size
+			});
       this.destNode = phina.glfilter.DestinationNode(gl, {
         width: size, height: size
       });

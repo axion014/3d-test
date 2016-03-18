@@ -306,7 +306,9 @@ phina.define('fly.MainScene', {
 		], [
 			function(resolve) { // Screen Setup
 				layer.addChildTo(this);
-				layer.alphaNode = phina.glfilter.AlphaNode(layer.gl);
+				layer.alphaNode = phina.glfilter.AlphaNode(layer.gl, {
+					width: layer.domElement.width, height: layer.domElement.height
+				});
 				var setalpha = function() {
 					layer.alphaNode.setUniform(layer.gl, 'color', [0, 0, 0, 1 - this.frame * 0.025])
 					if (this.frame === 40) {
