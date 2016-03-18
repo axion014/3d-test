@@ -157,7 +157,7 @@ phina.define('fly.EnemyManager', {
 		enem3: {
 			filename: 'enem-3',
 			routine: {
-				hp: 500, v: 0.25, size: 30, duration: 3, r: 0.1, explodeTime: 30,
+				hp: 500, v: 0.25, size: 30, duration: 1, r: 0.1, explodeTime: 30,
 				scale: new THREE.Vector3(2, 2, 2),
 				update: function(em) {
 					this.rotate(this.c);
@@ -165,10 +165,11 @@ phina.define('fly.EnemyManager', {
 					this.rotate(new THREE.Quaternion().setFromAxisAngle(vec, this.r));
 					this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
 					if (this.time % this.duration === 0) {
-						var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
+						var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x.clone().applyQuaternion(this.quaternion).normalize(), Math.PI));
 						em.enmBulletManager.createBullet({
-							position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(vecs, Math.PI * (this.time % (this.duration * 8)) / this.duration / 8)),
-							size: 0.5, atk: 50
+							position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(
+								vecs, Math.PI * (this.time % (this.duration * 8) / this.duration / 8) / 20 * (Math.random() + 10))
+							), size: 0.5, atk: 50
 						});
 					}
 					this.time++;
