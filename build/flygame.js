@@ -1,3 +1,647 @@
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.GLFilterLayer", {
+    superClass: 'phina.display.CanvasElement',
+
+    /**
+     * 子孫要素の描画の面倒を自分で見る
+     */
+    renderChildBySelf: true,
+
+    /** 子孫要素を普通に描画するためのキャンバス */
+    canvas2d: null,
+    /** canvas2dに描画するレンダラー */
+    renderer2d: null,
+    /**
+     * canvas2dの内容をWebGLテクスチャとして使うためのキャンバス
+     * 幅と高さが2の累乗
+     */
+    textureCanvas: null,
+    /** WebGL描画を行うためのcanvas要素 */
+    domElement: null,
+
+    /** WebGLコンテキスト */
+    gl: null,
+
+    /** canvas2d塗りつぶし用 */
+    backgroundColor: "white",
+
+    init: function(params) {
+      this.superInit();
+
+      this.$extend(phina.glfilter.GLFilterLayer.defaultParams, params);
+
+      this.canvas2d = phina.graphics.Canvas();
+      this.canvas2d.setSize(this.width, this.height);
+
+      this.renderer2d = phina.display.CanvasRenderer(this.canvas2d);
+
+      this.textureCanvas = phina.graphics.Canvas();
+      // 見える化
+      // document.body.appendChild(this.textureCanvas.domElement);
+
+      // 最適なサイズを計算する
+      var m = Math.max(this.width, this.height);
+      var size = Math.pow(2, Math.floor(Math.log(m) / Math.log(2)) + 1);
+      this.textureCanvas.setSize(size, size);
+
+      this.domElement = document.createElement("canvas");
+      this.domElement.width = size;
+      this.domElement.height = size;
+      // 見える化
+      // document.body.appendChild(this.domElement);
+
+      var gl = this.gl = this.domElement.getContext("webgl");
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+      this.headNode = phina.glfilter.SceneRenderNode(gl, {
+				width: size, height: size
+			});
+      this.destNode = phina.glfilter.DestinationNode(gl, {
+        width: size, height: size
+      });
+
+      this.headNode.connectTo(this.destNode);
+    },
+
+    draw: function(canvas) {
+      var tex = this.textureCanvas;
+
+      if (this.backgroundColor) {
+        this.canvas2d.clearColor(this.backgroundColor);
+        tex.clearColor(this.backgroundColor);
+      } else {
+        this.canvas2d.clear();
+        tex.clear();
+      }
+
+      // 自分の子孫をcanvas2dに描画する
+      if (this.children.length > 0) {
+        var tempChildren = this.children.slice();
+        for (var i = 0, len = tempChildren.length; i < len; ++i) {
+          this.renderer2d.renderObject(tempChildren[i]);
+        }
+      }
+
+      // 描画したcanvasの内容をtextureCanvasへ転写
+      var c2d = this.canvas2d.domElement;
+      tex.context.drawImage(
+        c2d, 0, 0, c2d.width, c2d.height, 0,
+				0, c2d.width, c2d.height
+      );
+
+      // WebGL描画
+      this.headNode.render(this.gl, tex.domElement);
+
+      // glに描いたものをcanvasに転写
+      var glcanvas = this.domElement;
+      canvas.context.drawImage(
+        glcanvas, 0, 0,
+				c2d.width, c2d.height, 0, 0, canvas.width, canvas.height
+      );
+    },
+
+    _static: {
+      defaultParams: {
+        width: 640,
+        height: 960,
+      }
+    }
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.Screen", {
+
+    frameBuffer: null,
+    depthRenderBuffer: null,
+    texture: null,
+
+    init: function(gl, width, height) {
+      this.width = width || 512;
+      this.height = height || 512;
+
+      this.frameBuffer = gl.createFramebuffer();
+      this.texture = gl.createTexture();
+      this.depthRenderBuffer = gl.createRenderbuffer();
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
+
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
+
+      gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthRenderBuffer);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.width, this.height);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRenderBuffer);
+
+      gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    },
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.ShaderNode", {
+
+    nextNode: null,
+
+    screen: null,
+    program: null,
+    attributes: null,
+    uniforms: null,
+
+    _positionVbo: null,
+    _uvVbo: null,
+
+    init: function(gl, params) {
+      this.$extend(phina.glfilter.ShaderNode.defaultParams, params);
+
+      this.screen = this._createScreen(gl, this.width, this.height);
+
+      this._setupProgram(gl);
+      this._setupVbo(gl);
+    },
+    _createScreen: function(gl, width, height) {
+      return phina.glfilter.Screen(gl, width, height);
+    },
+
+    connectTo: function(nextNode) {
+      this.nextNode = nextNode;
+      return nextNode;
+    },
+
+    /** for override */
+    getAttributeData: function() {
+      return [{
+        name: "position",
+        size: 2,
+      }, {
+        name: "uv",
+        size: 2,
+      }, ];
+    },
+
+    /** for override */
+    getUniformData: function() {
+      return [{
+        name: "texture0",
+        type: "texture"
+      }];
+    },
+
+    /** for override */
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+
+        "varying vec2 vUv;",
+
+        "void main(void) {",
+        "  gl_FragColor = texture2D(texture0, vUv);",
+        "}",
+      ].join("\n");
+    },
+
+    render: function(gl, prevScreen) {
+      gl.useProgram(this.program);
+      this.setAttributes(gl);
+
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, prevScreen.texture);
+      this.setUniform(gl, "texture0", 0);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.screen.frameBuffer);
+      gl.viewport(0, 0, this.width, this.height);
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      if (this.nextNode) {
+        this.nextNode.render(gl, this.screen);
+      }
+    },
+
+    setAttributes: function(gl) {
+      var position = this.attributes.position;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._positionVbo);
+      gl.enableVertexAttribArray(position.location);
+      gl.vertexAttribPointer(position.location, position.size, gl.FLOAT, false, 0, 0);
+
+      var uv = this.attributes.uv;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._uvVbo);
+      gl.enableVertexAttribArray(uv.location);
+      gl.vertexAttribPointer(uv.location, uv.size, gl.FLOAT, false, 0, 0);
+    },
+
+    setUniform: function(gl, name, value) {
+      var uni = this.uniforms[name];
+
+      if (uni) {
+        gl.useProgram(this.program);
+        switch (uni.type) {
+          case "float":
+            gl.uniform1f(uni.location, value);
+            break;
+          case "int":
+          case "texture":
+            gl.uniform1i(uni.location, value);
+            break;
+          case "vec2":
+            gl.uniform2fv(uni.location, value);
+            break;
+          case "vec3":
+            gl.uniform3fv(uni.location, value);
+            break;
+          case "vec4":
+          case "color":
+            gl.uniform4fv(uni.location, value);
+            break;
+          case "mat3":
+            gl.uniformMatrix3fv(uni.location, false, value);
+            break;
+          case "mat4":
+            gl.uniformMatrix4fv(uni.location, false, value);
+            break;
+        }
+      }
+    },
+
+    _setupProgram: function(gl) {
+      var vs = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vs, VS_SOURCE);
+      gl.compileShader(vs);
+      if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(vs));
+      }
+
+      var fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fs, this.getShaderSource());
+      gl.compileShader(fs);
+      if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(fs));
+      }
+
+      var program = gl.createProgram();
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+      gl.useProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(program));
+      }
+
+      this.attributes = this.getAttributeData().reduce(function(result, attr) {
+        result[attr.name] = {
+          size: attr.size,
+          location: gl.getAttribLocation(program, attr.name),
+        };
+        return result;
+      }, {});
+
+      this.uniforms = this.getUniformData().reduce(function(result, uni) {
+        result[uni.name] = {
+          type: uni.type,
+          location: gl.getUniformLocation(program, uni.name),
+        };
+        return result;
+      }, {});
+
+      this.program = program;
+    },
+
+    _setupVbo: function(gl) {
+      var positions = new Float32Array([
+        [-1, -1],
+        [1, -1],
+        [-1, 1],
+        [1, 1],
+      ].flatten());
+
+      var uvs = new Float32Array([
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+      ].flatten());
+
+      this._positionVbo = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._positionVbo);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+      this._uvVbo = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._uvVbo);
+      gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    },
+
+    _static: {
+      defaultParams: {
+        width: 512,
+        height: 512,
+      }
+    }
+
+  });
+
+  var VS_SOURCE = [
+    "attribute vec2 position;",
+    "attribute vec2 uv;",
+
+    "varying vec2 vUv;",
+
+    "void main(void) {",
+    "  vUv = uv;",
+    "  gl_Position = vec4(position, 0.0, 1.0);",
+    "}",
+  ].join("\n");
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.SceneRenderNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+      this.texture0 = gl.createTexture();
+    },
+
+    /**
+     * @param  {HTMLCanvasElement} texture
+     */
+    render: function(gl, texture) {
+      gl.useProgram(this.program);
+      this.setAttributes(gl);
+
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.texture0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      this.setUniform(gl, "texture0", 0);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.screen.frameBuffer);
+      gl.viewport(0, 0, this.width, this.height);
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      if (this.nextNode) {
+        this.nextNode.render(gl, this.screen);
+      }
+    }
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.DestinationNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+    _createScreen: function() {
+      // なにも返さない
+      return null;
+    },
+
+    connectTo: function() {
+      // なにもしない
+      return null;
+    },
+
+    render: function(gl, prevScreen) {
+      gl.useProgram(this.program);
+      this.setAttributes(gl);
+
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, prevScreen.texture);
+      this.setUniform(gl, "texture", 0);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, this.width, this.height);
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.flush();
+    }
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.AlphaNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+
+		getUniformData: function() {
+      return [{
+        name: "texture0",
+        type: "texture"
+      }, {
+        name: "color",
+        type: "vec4"
+      }];
+    },
+
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+				"uniform vec4 color;",
+
+        "varying vec2 vUv;",
+
+        "void main(void) {",
+        "  vec4 tex = texture2D(texture0, vUv);",
+        "  vec3 c = color.rgb * color.a + tex.rgb * (1.0 - color.a);",
+        "  gl_FragColor = vec4(c, tex.a);",
+        "}",
+      ].join("\n");
+    },
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.SepiaNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+
+        "varying vec2 vUv;",
+
+        "void main(void) {",
+        "  vec4 tex = texture2D(texture0, vUv);",
+        "  vec3 c = vec3((tex.r + tex.g + tex.b) / 3.0);",
+        "  gl_FragColor = vec4(c.r * 1.2, c.g * 1.05, c.b * 0.9, tex.a);",
+        "}",
+      ].join("\n");
+    },
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.MonotoneNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+
+        "varying vec2 vUv;",
+
+        "void main(void) {",
+        "  vec4 tex = texture2D(texture0, vUv);",
+        "  vec3 c = vec3((tex.r + tex.g + tex.b) / 3.0);",
+        "  gl_FragColor = vec4(c.r, c.g, c.b, tex.a);",
+        "}",
+      ].join("\n");
+    },
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.ReverseNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+
+        "varying vec2 vUv;",
+
+        "void main(void) {",
+        "  vec4 tex = texture2D(texture0, vUv);",
+        "  gl_FragColor = vec4(1.0 - tex.rgb, tex.a);",
+        "}",
+      ].join("\n");
+    },
+
+  });
+
+});
+
+phina.namespace(function() {
+
+  phina.define("phina.glfilter.ZoomBlurNode", {
+    superClass: "phina.glfilter.ShaderNode",
+
+    init: function(gl, params) {
+      this.superInit(gl, params);
+    },
+
+    getUniformData: function() {
+      return [{
+        name: "texture0",
+        type: "texture",
+      }, {
+        name: "x",
+        type: "float",
+      }, {
+        name: "y",
+        type: "float",
+      }, {
+        name: "strength",
+        type: "float",
+      }];
+    },
+
+    getShaderSource: function() {
+      return [
+        "precision mediump float;",
+
+        "uniform sampler2D texture0;",
+        "uniform float x;",
+        "uniform float y;",
+				"uniform float strength;",
+
+        "varying vec2 vUv;",
+
+        "const float nFrag = 1.0 / 30.0;",
+
+        "float rnd(vec3 scale, float seed){",
+        "    return fract(sin(dot(gl_FragCoord.stp + seed, scale)) * 43758.5453 + seed);",
+        "}",
+
+        "void main(void){",
+        "    vec2  center = vec2(x / {0}, 1.0 - y / {1});".format(floatToString(this.width), floatToString(this.height)),
+        "    vec3  destColor = vec3(0.0);",
+        "    float random = rnd(vec3(12.9898, 78.233, 151.7182), 0.0);",
+        "    vec2  fcc = vUv - center;",
+        "    float totalWeight = 0.0;",
+
+        "    for(float i = 0.0; i <= 30.0; i++){",
+        "        float percent = (i + random) * nFrag;",
+        "        float weight = percent - percent * percent;",
+        "        vec2  t = vUv - fcc * percent * strength * nFrag;",
+        "        destColor += texture2D(texture0, t).rgb * weight;",
+        "        totalWeight += weight;",
+        "    }",
+        "    gl_FragColor = vec4(destColor / totalWeight, 1.0);",
+        "}",
+      ].join("\n");
+    },
+
+  });
+
+  var floatToString = function(f) {
+    return (f % 1) ? "" + f : "" + f + ".0";
+  };
+
+});
+
 var SCREEN_WIDTH = 640;
 var SCREEN_CENTER_X = 320;
 var SCREEN_HEIGHT = 960;
@@ -311,7 +955,7 @@ phina.define('fly.asset.Stage', {
 				stage.enemys[i].rotation.$safe({x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0});
 				stage.enemys[i].autospawn.$safe({time: 0, progress: 0, random: {}});
 				stage.enemys[i].autospawn.random.$safe({x: 0, y: 0, z: 0});
-				stage.enemys[i].killmes.$safe({time: 0, text: ''});
+				stage.enemys[i].killmes.$safe({time: 0, text: '', offkill: false});
 				stage.enemys[i].option.$safe({
 					position: new THREE.Vector3(stage.enemys[i].position.x, stage.enemys[i].position.y, stage.enemys[i].position.z),
 					quaternion: new THREE.Quaternion().rotate(stage.enemys[i].rotation.x, stage.enemys[i].rotation.y, stage.enemys[i].rotation.z),
@@ -635,9 +1279,10 @@ phina.define('fly.EnemyManager', {
 		this.killcount++;
 		if (this.get(i).group.num === 0) {
 			var text = this.get(i).group.message.text;
+			if (this.get(i).group.message.offkill) {this.message.text = '';}
 			if (text !== '') {
-				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = ''}.bind(this));
-				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text}.bind(this));
+				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = '';}.bind(this));
+				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text;}.bind(this));
 			}
 		}
 		this.get(i).parent.remove(this.get(i));
@@ -699,7 +1344,7 @@ phina.define('fly.EnemyManager', {
 		enem3: {
 			filename: 'enem-3',
 			routine: {
-				hp: 500, v: 0.25, size: 30, duration: 3, r: 0.1, explodeTime: 30,
+				hp: 500, v: 0.25, size: 30, duration: 1, r: 0.1, explodeTime: 30,
 				scale: new THREE.Vector3(2, 2, 2),
 				update: function(em) {
 					this.rotate(this.c);
@@ -707,10 +1352,11 @@ phina.define('fly.EnemyManager', {
 					this.rotate(new THREE.Quaternion().setFromAxisAngle(vec, this.r));
 					this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
 					if (this.time % this.duration === 0) {
-						var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
+						var vecs = this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x.clone().applyQuaternion(this.quaternion).normalize(), Math.PI));
 						em.enmBulletManager.createBullet({
-							position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(vecs, Math.PI * (this.time % (this.duration * 8)) / this.duration / 8)),
-							size: 0.5, atk: 50
+							position: this.position, quaternion: this.quaternion.clone().rotate(new THREE.Quaternion().setFromAxisAngle(
+								vecs, Math.PI * (this.time % (this.duration * 8) / this.duration / 8) / 20 * (Math.random() + 10))
+							), size: 0.5, atk: 50
 						});
 					}
 					this.time++;
@@ -894,7 +1540,8 @@ phina.define('fly.TitleScene', {
 
 	init: function(params) {
 		this.superInit(params);
-		var layer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
 		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
@@ -907,19 +1554,19 @@ phina.define('fly.TitleScene', {
 			this.position.z = flyer.position.z;
 		};
 		plane.rotate(-Math.PI / 2, 0, 0);
-		layer.scene.add(directionalLight);
-		layer.scene.add(new THREE.AmbientLight(0x606060));
-		layer.scene.add(flyer);
-		layer.scene.add(sky);
-		layer.scene.add(plane);
-		layer.update = function(app) { // Update routine
+		threelayer.scene.add(directionalLight);
+		threelayer.scene.add(new THREE.AmbientLight(0x606060));
+		threelayer.scene.add(flyer);
+		threelayer.scene.add(sky);
+		threelayer.scene.add(plane);
+		threelayer.update = function(app) { // Update routine
 			// Camera control
-			layer.camera.quaternion.copy(new THREE.Quaternion());
-			layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.sin(this.frame * 0.01) * 0.25));
-			layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, Math.PI + this.frame * 0.005));
-			var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
-			layer.camera.position.copy(flyer.position.clone().add(vec));
-			layer.camera.updateMatrixWorld();
+			threelayer.camera.quaternion.copy(new THREE.Quaternion());
+			threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.sin(this.frame * 0.01) * 0.25));
+			threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, Math.PI + this.frame * 0.005));
+			var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+			threelayer.camera.position.copy(flyer.position.clone().add(vec));
+			threelayer.camera.updateMatrixWorld();
 			this.frame++;
 		}.bind(this);
 		var title = phina.display.Label({
@@ -931,9 +1578,36 @@ phina.define('fly.TitleScene', {
 			stroke: false, fontSize: 24,
 		}).setPosition(this.gridX.center(), this.gridY.span(12));
 		layer.addChildTo(this);
-		title.addChildTo(this);
-		message.addChildTo(this);
-		this.on('pointstart', function() {this.exit();});
+		threelayer.addChildTo(layer);
+		title.addChildTo(layer);
+		message.addChildTo(layer);
+		this.on('pointstart', function() {
+			this.startframe = 0;
+			layer.alphaNode = phina.glfilter.AlphaNode(layer.gl, {
+				width: layer.domElement.width, height: layer.domElement.height
+			});
+			layer.zoomBlurNode = phina.glfilter.ZoomBlurNode(layer.gl, {
+				width: layer.domElement.width, height: layer.domElement.height
+			});
+			layer.zoomBlurNode.setUniform(layer.gl, 'x', SCREEN_CENTER_X);
+			layer.zoomBlurNode.setUniform(layer.gl, 'y', SCREEN_CENTER_Y);
+			var setfilter = function() {
+				layer.alphaNode.setUniform(layer.gl, 'color', [1, 1, 1, this.startframe * 0.025]);
+				layer.zoomBlurNode.setUniform(layer.gl, 'strength', this.startframe * 0.4);
+				if (this.startframe === 40) {
+					layer.headNode.connectTo(layer.destNode);
+					this.off('enterframe', setfilter);
+					this.exit({stage: 'tutorial'});
+				} else {
+					this.startframe++;
+				}
+			}.bind(this);
+			this.on('enterframe', setfilter);
+			layer.headNode
+				.connectTo(layer.zoomBlurNode)
+				.connectTo(layer.alphaNode)
+				.connectTo(layer.destNode);
+		});
 	}
 });
 
@@ -949,7 +1623,8 @@ phina.define('fly.MainScene', {
 		if (options.difficulty) {this.difficulty = options.difficulty;}
 		this.superInit();
 		// Variables
-		var layer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 
 		var map = phina.display.CircleShape({radius: 75, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: null});
 		var playerpos = fly.DirectionShape({
@@ -972,11 +1647,11 @@ phina.define('fly.MainScene', {
 		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
 		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
 
-		var enemyManager = fly.EnemyManager(this, layer.scene, gauge_boss_h, message);
+		var enemyManager = fly.EnemyManager(this, threelayer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
-		var enmBulletManager = fly.BulletManager(layer.scene);
+		var enmBulletManager = fly.BulletManager(threelayer.scene);
 		enemyManager.enmBulletManager = enmBulletManager;
-		var windManager = fly.WindManager(layer.scene);
+		var windManager = fly.WindManager(threelayer.scene);
 
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var goal;
@@ -997,10 +1672,10 @@ phina.define('fly.MainScene', {
 						 - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(goal.position.x - this.position.x, goal.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
 						this.myrot.z1 += c * 0.00008;
 						this.yo += c * 0.00008;
-						var ty = s.goaled ? 1000 : goal.position.y;
+						var ty = s.goaled ? 50 : 0;
 						this.row += ((p.y - SCREEN_CENTER_Y) * (1 - this.auto)
 						 	- Math.max(Math.min((Math.atan2(
-							ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
+							goal.position.y + ty - this.position.y, phina.geom.Vector2(goal.position.x - this.position.x, goal.position.z - this.position.z).length()
 						) + this.myrot.x) * 100, 100), -100) * this.auto) * this.ups;
 						if (p.getPointing()) {
 							this.e--;
@@ -1071,16 +1746,10 @@ phina.define('fly.MainScene', {
 							if (df <= radius) {this.av.y += windManager.get(i).v / 2;}
 						}
 						for (var i = 0; i < enmBulletManager.elements.length; i++) {
-							var v1 = Axis.z.clone().applyQuaternion(this.quaternion).setLength(54);
-							var v2 = Axis.z.clone().applyQuaternion(enmBulletManager.get(i).quaternion).setLength(enmBulletManager.get(i).size);
-							var p1 = this.position.clone().sub(v1.clone().multiplyScalar(-0.5));
-							var p2 = enmBulletManager.get(i).position.clone().sub(v2.clone().multiplyScalar(-0.5));
-							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
+							if (this.position.clone().sub(enmBulletManager.get(i).position).length() < 5 + enmBulletManager.get(i).size) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
-								if (s.score > 0) {
-									s.score--;
-								}
+								s.score--;
 								enmBulletManager.removeBullet(i);
 							}
 						}
@@ -1092,12 +1761,11 @@ phina.define('fly.MainScene', {
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
-								if (s.score > 0) {
-									s.score -= 3;
-								}
+								s.score -= 3;
 								enemyManager.removeEnemy(i);
 							}
 						}
+						if (this.position.y <= 0) {this.hp = 0;}
 					},
 					sub: [
 						function() {
@@ -1247,8 +1915,23 @@ phina.define('fly.MainScene', {
 		], [
 			function(resolve) { // Screen Setup
 				layer.addChildTo(this);
-				map.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
-				playerpos.addChildTo(this).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				layer.alphaNode = phina.glfilter.AlphaNode(layer.gl, {
+					width: layer.domElement.width, height: layer.domElement.height
+				});
+				var setalpha = function() {
+					layer.alphaNode.setUniform(layer.gl, 'color', [1, 1, 1, 1 - this.frame * 0.025]);
+					if (this.frame === 40) {
+						layer.headNode.connectTo(layer.destNode);
+						this.off('enterframe', setalpha);
+					}
+				}.bind(this);
+				this.on('enterframe', setalpha);
+				layer.headNode
+					.connectTo(layer.alphaNode)
+					.connectTo(layer.destNode);
+				threelayer.addChildTo(layer);
+				map.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				playerpos.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
 				playerpos.rotation = 180;
 
 				var grad = name.canvas.context.createLinearGradient(0, -name.height / 2, 0, name.height / 2);
@@ -1260,38 +1943,38 @@ phina.define('fly.MainScene', {
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
 						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
-					}).addChildTo(this)
+					}).addChildTo(layer)
 						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
 					direction[i].rotation = -i * 90;
 				}
 
-				gauge_h.addChildTo(this).setPosition(80, SCREEN_HEIGHT - 100);
+				gauge_h.addChildTo(layer).setPosition(80, SCREEN_HEIGHT - 100);
 				gauge_h.animation = false;
-				gauge_e.addChildTo(this);
+				gauge_e.addChildTo(layer);
 				gauge_e.animation = false;
 				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
 				if (this.stage !== 'arcade') {
-					goalrader.addChildTo(this);
-					gauge_boss_h.addChildTo(this).setPosition(SCREEN_CENTER_X, 20);
+					goalrader.addChildTo(layer);
+					gauge_boss_h.addChildTo(layer).setPosition(SCREEN_CENTER_X, 20);
 					gauge_boss_h.tweener.setUpdateType('fps');
 					gauge_boss_h.alpha = 0;
 					gauge_boss_h.animation = false;
-					msgbox.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
+					msgbox.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
 					msgbox.live = 0;
-					message.addChildTo(this).setPosition(0, SCREEN_HEIGHT);
-					name.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+					message.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
+					name.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
 					name.tweener2 = phina.accessory.Tweener().attachTo(name);
 					name.tweener.setUpdateType('fps');
 					name.tweener2.setUpdateType('fps');
 					name.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
 					name.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
-					resultbg.addChildTo(this).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
+					resultbg.addChildTo(layer).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
 					grad = resultbg.canvas.context.createLinearGradient(0, -SCREEN_CENTER_Y, 0, SCREEN_CENTER_Y);
 					grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
 					grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
 					resultbg.fill = grad;
-					resulttitle.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
-					resulttext.addChildTo(this).setPosition(SCREEN_CENTER_X, 0);
+					resulttitle.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
+					resulttext.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
 					resultbg.tweener.setUpdateType('fps');
 					resulttitle.tweener.setUpdateType('fps');
 					resulttext.tweener.setUpdateType('fps');
@@ -1300,7 +1983,7 @@ phina.define('fly.MainScene', {
 					resulttext.alpha = 0;
 				}
 
-				speed.addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
+				speed.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
 
 				enemyManager.addChildTo(this);
 				enmBulletManager.addChildTo(this);
@@ -1317,86 +2000,162 @@ phina.define('fly.MainScene', {
 				plane.rotate(-Math.PI / 2, 0, 0);
 				if (this.stage !== 'arcade') {
 					goal.tweener.setUpdateType('fps');
-					layer.scene.add(goal);
+					threelayer.scene.add(goal);
 				}
-				layer.scene.add(directionalLight);
-				layer.scene.add(new THREE.AmbientLight(0x606060));
-				layer.scene.add(flyer);
-				layer.scene.add(sky);
-				layer.scene.add(plane);
+				threelayer.scene.add(directionalLight);
+				threelayer.scene.add(new THREE.AmbientLight(0x606060));
+				threelayer.scene.add(flyer);
+				threelayer.scene.add(sky);
+				threelayer.scene.add(plane);
 				resolve();
 			}, function(resolve) {
-				layer.update = function(app) { // Update routine
+				threelayer.update = function(app) { // Update routine
 					var p = app.pointer;
 					var k = app.keyboard;
-					if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
-						var rand = Math.random();
-						if (rand > 0.98 && enemyManager.count() < 100) {
-							if (rand < 0.995) {
-								var enmname = 'enem1';
-							} else if (rand < 0.9975) {
-								var enmname = 'enem2';
-							} else {
-								var enmname = 'enem3';
-							}
-							enemyManager.createEnemyMulti(enmname, {
-								position: new THREE.Vector3(Math.randint(-500, 500), Math.randint(500, 5000), Math.randint(-500, 500)).add(flyer.position),
-								quaternion: new THREE.Quaternion().rotate(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2)
-							}, {random: {x: 5, y: 5, z: 5}});
-						}
-						this.difficulty += 0.0001;
-						if (enemyManager.count() > 50) {enemyManager.removeEnemy(0);}
+					if (!flyer) {
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, -0.002));
+					} else if (this.goaled) {
+						flyer.flare('enterframe');
+						flyer.update(p, k, this);
+						sky.update();
+						plane.update();
+						// Camera control
+						threelayer.camera.quaternion.copy(new THREE.Quaternion());
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						threelayer.camera.position.copy(flyer.position.clone().add(vec));
 					} else {
-						this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
-						var xdist = flyer.position.x / 15 - goal.position.x / 15;
-						var zdist = flyer.position.z / 15 - goal.position.z / 15;
-						var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
-						var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
-						goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
-						enemyManager.flare('frame', {progress: this.progress});
-					}
-					for (var i = 0; i < enmBulletManager.elements.length; i++) {
-						if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
-							enmBulletManager.removeBullet(i);
-						}
-					}
-
-					this.flare('frame' + this.frame);
-					enemyManager.flare('frame' + this.frame);
-					flyer.flare('enterframe');
-					flyer.update(p, k, this);
-					sky.update();
-					plane.update();
-					goal.update(this);
-					windManager.flyerposy = flyer.position.y;
-
-					for(var i = 0; i < 4; i++) {
-						var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
-						direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
-							SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
-						direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
-					}
-
-					// Camera control
-					layer.camera.quaternion.copy(new THREE.Quaternion());
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
-					layer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-					var vec = Axis.z.clone().applyQuaternion(layer.camera.quaternion).negate().setLength(-100);
-					layer.camera.position.copy(flyer.position.clone().add(vec));
-					layer.camera.updateMatrixWorld();
-
-					if (this.bosscoming) {
-						if (this.boss.parent === null) {
-							this.bosscoming = false;
-							gauge_boss_h.tweener.fadeOut(10).play();
-							this.bossdefeated = true;
+						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
+							var rand = Math.random();
+							if (rand > 0.98 && enemyManager.count() < 100) {
+								if (rand < 0.995) {
+									var enmname = 'enem1';
+								}	else if (rand < 0.9975) {
+									var enmname = 'enem2';
+								} else {
+									var enmname = 'enem3';
+								}
+								enemyManager.createEnemyMulti(enmname, {
+									position: new THREE.Vector3(Math.randint(-500, 500), Math.randint(500, 5000), Math.randint(-500, 500)).add(flyer.position),
+									quaternion: new THREE.Quaternion().rotate(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2)
+								}, {random: {x: 5, y: 5, z: 5}});
+							}
+							this.difficulty += 0.0001;
+							if (enemyManager.count() > 50) {enemyManager.removeEnemy(0);}
 						} else {
-							gauge_boss_h.value = this.boss.hp;
+							this.progress = flyer.position.clone().dot(goal.position) / goal.position.clone().dot(goal.position);
+							var xdist = flyer.position.x / 15 - goal.position.x / 15;
+							var zdist = flyer.position.z / 15 - goal.position.z / 15;
+							var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
+							var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
+							goalrader.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+							enemyManager.flare('frame', {progress: this.progress});
 						}
-					}
+						for (var i = 0; i < enmBulletManager.elements.length; i++) {
+							if (enmBulletManager.get(i).position.clone().sub(flyer.position).length > 800) {
+								enmBulletManager.removeBullet(i);
+							}
+						}
+						if (enmBulletManager.count() > 500) {for(var i = 0; enmBulletManager.count() > 500; i++) {enmBulletManager.removeBullet(0);}}
 
-					if (k.getKeyDown(90)) {message.text = '';}
+						this.flare('frame' + this.frame);
+						enemyManager.flare('frame' + this.frame);
+						flyer.flare('enterframe');
+						flyer.update(p, k, this);
+						sky.update();
+						plane.update();
+						goal.update(this);
+						windManager.flyerposy = flyer.position.y;
+
+						for(var i = 0; i < 4; i++) {
+							var reverse = (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? 1 : 0)
+							direction[i].setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI),
+								SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2 - flyer.myrot.y + reverse * Math.PI));
+							direction[i].rotation = -i * 90 + flyer.myrot.y / Math.PI * 180 + reverse * 180;
+						}
+
+						// Camera control
+						threelayer.camera.quaternion.copy(new THREE.Quaternion());
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						threelayer.camera.position.copy(flyer.position.clone().add(vec));
+
+						if (this.bosscoming) {
+							if (this.boss.parent === null) {
+								this.bosscoming = false;
+								gauge_boss_h.tweener.fadeOut(10).play();
+								this.bossdefeated = true;
+							} else {
+								gauge_boss_h.value = this.boss.hp;
+							}
+						}
+
+						if (k.getKeyDown(32)) {message.text = '';} // Space Key
+
+						var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
+						var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
+						if (flyer.hp <= 0) {
+							enemyManager.effectmanager.explode(flyer.position, 10, 30);
+							threelayer.scene.remove(flyer);
+							flyer = null;
+							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+							resulttext.text = 'Score: ' + this.score
+								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+							resulttitle.text = 'Game Over';
+							message.text = '';
+							map.tweener.fadeOut(20).play();
+							goalrader.tweener.fadeOut(20).play();
+							for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
+							for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
+							playerpos.tweener.fadeOut(20).play();
+							gauge_h.tweener.fadeOut(20).play();
+							gauge_e.tweener.fadeOut(20).play();
+							msgbox.tweener.fadeOut(20).play();
+							speed.tweener.fadeOut(20).play();
+						} else if (goal.enable && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
+							flyer.tweener.to({auto: 1}, 60).play();
+							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+							var rate = '';
+							if (this.score >= rates[2]) {
+								rate = 'Perfect';
+							} else if (this.score >= rates[1]) {
+								rate = 'Good';
+							} else if (this.score >= rates[0]) {
+								rate = 'Middle';
+							} else {
+								rate = 'Bad';
+							}
+							this.score += rates[0] * flyer.hp / 1000;
+							if (this.score < 0) {this.score = 0;}
+							resulttext.text = 'Score: ' + this.score
+								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
+								+ '\nRate: ' + rate;
+							message.text = '';
+							map.tweener.fadeOut(20).play();
+							goalrader.tweener.fadeOut(20).play();
+							for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
+							for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
+							playerpos.tweener.fadeOut(20).play();
+							gauge_h.tweener.fadeOut(20).play();
+							gauge_e.tweener.fadeOut(20).play();
+							msgbox.tweener.fadeOut(20).play();
+							speed.tweener.fadeOut(20).play();
+							this.goaled = true;
+						}
+
+						if (this.frame % 600 === 0) {this.score--;}
+
+						this.frame++;
+					}
 					if (message.text !== '') {
 						if (msgbox.live < 0.99999) {
 							msgbox.live += 0.5;
@@ -1412,59 +2171,7 @@ phina.define('fly.MainScene', {
 						msgbox.height = SCREEN_HEIGHT / 12 + SCREEN_HEIGHT / 5 * msgbox.live;
 						message.setPosition(SCREEN_CENTER_X * 0.2 * msgbox.live, SCREEN_HEIGHT - SCREEN_CENTER_Y * 0.3 * msgbox.live);
 					}
-
-					var v1 = Axis.z.clone().applyQuaternion(flyer.quaternion).setLength(54);
-					var p1 = flyer.position.clone().sub(v1.clone().multiplyScalar(-0.5));
-					if (flyer.hp <= 0) {
-						flyer.tweener.to({auto: 1}, 60).play();
-						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
-						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-						resulttext.text = 'Score: ' + this.score
-							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-						if (this.stage !== 'arcade') {
-							var rate = '';
-							if (this.score >= rates[2]) {
-								rate = 'Perfect';
-							} else if (this.score >= rates[1]) {
-								rate = 'Good';
-							} else if (this.score >= rates[0]) {
-								rate = 'Middle';
-							} else {
-								rate = 'Bad';
-							}
-							resulttext.text += '\nRate: ' + rate;
-						}
-						resulttitle.text = 'Game Over';
-						message.text = '';
-					} else if (goal.enable && (!this.goaled) && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
-						flyer.tweener.to({auto: 1}, 60).play();
-						resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
-						resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-						resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-						var rate = '';
-						if (this.score >= rates[2]) {
-							rate = 'Perfect';
-						} else if (this.score >= rates[1]) {
-							rate = 'Good';
-						} else if (this.score >= rates[0]) {
-							rate = 'Middle';
-						} else {
-							rate = 'Bad';
-						}
-						resulttext.text = 'Score: ' + this.score
-							+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-							+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
-							+ '\nRate: ' + rate;
-						message.text = '';
-						this.goaled = true;
-					}
-
-					if (this.frame % 600 === 0 && this.score > 0) {
-						this.score--;
-					}
-
-					this.frame++;
+					threelayer.camera.updateMatrixWorld();
 				}.bind(this);
 				resolve();
 			}
@@ -1511,9 +2218,6 @@ phina.define('fly.MainSequence', {
 				{
 					label: 'main',
 					className: 'fly.MainScene',
-					arguments: {
-						stage: 'tutorial'
-					}
 				}
 			]
 		});
