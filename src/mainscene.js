@@ -496,6 +496,15 @@ phina.define('fly.MainScene', {
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							resulttitle.text = 'Game Over';
 							message.text = '';
+							map.tweener.fadeOut(20).play();
+							goalrader.tweener.fadeOut(20).play();
+							for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
+							for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
+							playerpos.tweener.fadeOut(20).play();
+							gauge_h.tweener.fadeOut(20).play();
+							gauge_e.tweener.fadeOut(20).play();
+							msgbox.tweener.fadeOut(20).play();
+							speed.tweener.fadeOut(20).play();
 						} else if (goal.enable && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 							flyer.tweener.to({auto: 1}, 60).play();
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
@@ -518,6 +527,15 @@ phina.define('fly.MainScene', {
 								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 								+ '\nRate: ' + rate;
 							message.text = '';
+							map.tweener.fadeOut(20).play();
+							goalrader.tweener.fadeOut(20).play();
+							for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
+							for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
+							playerpos.tweener.fadeOut(20).play();
+							gauge_h.tweener.fadeOut(20).play();
+							gauge_e.tweener.fadeOut(20).play();
+							msgbox.tweener.fadeOut(20).play();
+							speed.tweener.fadeOut(20).play();
 							this.goaled = true;
 						}
 
