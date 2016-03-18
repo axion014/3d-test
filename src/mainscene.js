@@ -133,11 +133,7 @@ phina.define('fly.MainScene', {
 							if (df <= radius) {this.av.y += windManager.get(i).v / 2;}
 						}
 						for (var i = 0; i < enmBulletManager.elements.length; i++) {
-							var v1 = Axis.z.clone().applyQuaternion(this.quaternion).setLength(54);
-							var v2 = Axis.z.clone().applyQuaternion(enmBulletManager.get(i).quaternion).setLength(enmBulletManager.get(i).size);
-							var p1 = this.position.clone().sub(v1.clone().multiplyScalar(-0.5));
-							var p2 = enmBulletManager.get(i).position.clone().sub(v2.clone().multiplyScalar(-0.5));
-							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enmBulletManager.get(i).size)) {
+							if (this.position.clone().sub(enmBulletManager.get(i).position).length() < 5 + enmBulletManager.get(i).size) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
 								this.hp -= enmBulletManager.get(i).atk * s.difficulty;
 								s.score--;
