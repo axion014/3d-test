@@ -51,7 +51,7 @@ phina.namespace(function() {
       // 見える化
       // document.body.appendChild(this.domElement);
 
-      var gl = this.gl = this.domElement.getContext("webgl");
+      var gl = this.gl = this.domElement.getContext("webgl") || this.domElement.getContext("experimental-webgl");
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
