@@ -492,7 +492,8 @@ phina.define('fly.MainScene', {
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
 							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
 							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-							resulttext.text = 'Score: ' + this.score
+							if (this.score < 0) {this.score = 0;}
+							resulttext.text = 'Score: ' + this.score.toFixed(0)
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							resulttitle.text = 'Game Over';
 							message.text = '';
@@ -522,7 +523,7 @@ phina.define('fly.MainScene', {
 							}
 							this.score += rates[0] * flyer.hp / 1000;
 							if (this.score < 0) {this.score = 0;}
-							resulttext.text = 'Score: ' + this.score
+							resulttext.text = 'Score: ' + this.score.toFixed(0)
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 								+ '\nRate: ' + rate;
