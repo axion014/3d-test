@@ -51,7 +51,7 @@ phina.namespace(function() {
       // 見える化
       // document.body.appendChild(this.domElement);
 
-      var gl = this.gl = this.domElement.getContext("webgl");
+      var gl = this.gl = this.domElement.getContext("webgl") || this.domElement.getContext("experimental-webgl");
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
@@ -806,6 +806,33 @@ phina.define('fly.DirectionShape', {
 				.lineTo(-this.width, -this.height)
 				.closePath()
 				.stroke();
+		}
+	}
+});
+
+phina.define('fly.MarkShape', {
+	superClass: 'phina.display.Shape',
+	init: function(options) {
+		options = ({}).$safe(options, {
+			backgroundColor: 'transparent',
+			stroke: '#4448',
+			strokeWidth: 1,
+
+			width: 16,
+			height: 16
+		});
+		this.superInit(options);
+	},
+
+	render: function(canvas) {
+		canvas.clearColor(this.backgroundColor);
+		canvas.transformCenter();
+
+		if (this.isStrokable()) {
+			canvas.lineWidth = this.strokeWidth;
+			canvas.strokeStyle = this.stroke;
+			canvas.drawLine(-this.width, 0, this.width, 0);
+			canvas.drawLine(0, -this.height, 0, this.height);
 		}
 	}
 });
@@ -1597,7 +1624,7 @@ phina.define('fly.TitleScene', {
 				if (this.startframe === 40) {
 					layer.headNode.connectTo(layer.destNode);
 					this.off('enterframe', setfilter);
-					this.exit({stage: 'tutorial'});
+					this.exit();
 				} else {
 					this.startframe++;
 				}
@@ -1640,6 +1667,7 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
+		var mark = fly.MarkShape();
 		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
 		var rates;
 
@@ -1683,7 +1711,7 @@ phina.define('fly.MainScene', {
 						}
 						if (k.getKeyDown(68)) { // D Key
 							this.speed++;
-							this.speed %= 4;
+							this.speed %= this.speeds.length;
 							speed.text = 'speed: ' + (this.speed + 1);
 						}
 						this.myrot.x += this.row * 0.1;
@@ -1947,6 +1975,7 @@ phina.define('fly.MainScene', {
 						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
 					direction[i].rotation = -i * 90;
 				}
+				mark.addChildTo(this).setPosition(this.gridX.center(), this.gridY.center());
 
 				gauge_h.addChildTo(layer).setPosition(80, SCREEN_HEIGHT - 100);
 				gauge_h.animation = false;
@@ -2007,6 +2036,8 @@ phina.define('fly.MainScene', {
 				threelayer.scene.add(flyer);
 				threelayer.scene.add(sky);
 				threelayer.scene.add(plane);
+				threelayer.camera.radiuses = [-100, 10, 28];
+				threelayer.camera.radius = 0;
 				resolve();
 			}, function(resolve) {
 				threelayer.update = function(app) { // Update routine
@@ -2021,10 +2052,10 @@ phina.define('fly.MainScene', {
 						plane.update();
 						// Camera control
 						threelayer.camera.quaternion.copy(new THREE.Quaternion());
-						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2 + (threelayer.camera.radius !== 0 ? -flyer.myrot.z1 : 0)));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(threelayer.camera.radiuses[threelayer.camera.radius]);
 						threelayer.camera.position.copy(flyer.position.clone().add(vec));
 					} else {
 						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
@@ -2077,11 +2108,15 @@ phina.define('fly.MainScene', {
 						}
 
 						// Camera control
+						if (k.getKeyDown(53)) { // 5 Key
+							threelayer.camera.radius++;
+							threelayer.camera.radius %= threelayer.camera.radiuses.length;
+						}
 						threelayer.camera.quaternion.copy(new THREE.Quaternion());
-						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2 + (threelayer.camera.radius !== 0 ? -flyer.myrot.z1 : 0)));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(threelayer.camera.radiuses[threelayer.camera.radius]);
 						threelayer.camera.position.copy(flyer.position.clone().add(vec));
 
 						if (this.bosscoming) {
@@ -2105,7 +2140,8 @@ phina.define('fly.MainScene', {
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
 							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
 							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-							resulttext.text = 'Score: ' + this.score
+							if (this.score < 0) {this.score = 0;}
+							resulttext.text = 'Score: ' + this.score.toFixed(0)
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 							resulttitle.text = 'Game Over';
 							message.text = '';
@@ -2135,7 +2171,7 @@ phina.define('fly.MainScene', {
 							}
 							this.score += rates[0] * flyer.hp / 1000;
 							if (this.score < 0) {this.score = 0;}
-							resulttext.text = 'Score: ' + this.score
+							resulttext.text = 'Score: ' + this.score.toFixed(0)
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
 								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 								+ '\nRate: ' + rate;
@@ -2218,6 +2254,9 @@ phina.define('fly.MainSequence', {
 				{
 					label: 'main',
 					className: 'fly.MainScene',
+					arguments: {
+						stage: 'tutorial'
+					}
 				}
 			]
 		});
