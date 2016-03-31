@@ -12,6 +12,7 @@ global.js
 threeext.js
 simpleupdater.js
 directionshape.js
+markshape.js
 loaders.js
 collision.js
 popup.js

@@ -27,6 +27,7 @@ phina.define('fly.MainScene', {
 			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
 		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
 		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
+		var mark = fly.MarkShape();
 		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
 		var rates;
 
@@ -334,6 +335,7 @@ phina.define('fly.MainScene', {
 						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
 					direction[i].rotation = -i * 90;
 				}
+				mark.addChildTo(this).setPosition(this.gridX.center(), this.gridY.center());
 
 				gauge_h.addChildTo(layer).setPosition(80, SCREEN_HEIGHT - 100);
 				gauge_h.animation = false;
@@ -394,6 +396,8 @@ phina.define('fly.MainScene', {
 				threelayer.scene.add(flyer);
 				threelayer.scene.add(sky);
 				threelayer.scene.add(plane);
+				threelayer.camera.radiuses = [-100, 10, 28];
+				threelayer.camera.radius = 0;
 				resolve();
 			}, function(resolve) {
 				threelayer.update = function(app) { // Update routine
@@ -408,10 +412,10 @@ phina.define('fly.MainScene', {
 						plane.update();
 						// Camera control
 						threelayer.camera.quaternion.copy(new THREE.Quaternion());
-						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2 + (threelayer.camera.radius !== 0 ? -flyer.myrot.z1 : 0)));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(threelayer.camera.radiuses[threelayer.camera.radius]);
 						threelayer.camera.position.copy(flyer.position.clone().add(vec));
 					} else {
 						if (this.stage === 'arcade') { // Arcade mode (random enemy spawn)
@@ -464,11 +468,15 @@ phina.define('fly.MainScene', {
 						}
 
 						// Camera control
+						if (k.getKeyDown(53)) { // 5 Key
+							threelayer.camera.radius++;
+							threelayer.camera.radius %= threelayer.camera.radiuses.length;
+						}
 						threelayer.camera.quaternion.copy(new THREE.Quaternion());
-						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2));
+						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, -flyer.myrot.z2 + (threelayer.camera.radius !== 0 ? -flyer.myrot.z1 : 0)));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, -flyer.myrot.x));
 						threelayer.camera.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, flyer.myrot.y + Math.PI));
-						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(-100);
+						var vec = Axis.z.clone().applyQuaternion(threelayer.camera.quaternion).negate().setLength(threelayer.camera.radiuses[threelayer.camera.radius]);
 						threelayer.camera.position.copy(flyer.position.clone().add(vec));
 
 						if (this.bosscoming) {
