@@ -70,7 +70,7 @@ phina.define('fly.MainScene', {
 						}
 						if (k.getKeyDown(68)) { // D Key
 							this.speed++;
-							this.speed %= 4;
+							this.speed %= this.speeds.length;
 							speed.text = 'speed: ' + (this.speed + 1);
 						}
 						this.myrot.x += this.row * 0.1;
