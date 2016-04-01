@@ -44,7 +44,7 @@ phina.define('fly.MainScene', {
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var goal;
 		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
-		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
+		var plane = new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
 		this.load([[
 			function(resolve) { // Load Player
 				flyer.position.y = 1000;
@@ -514,6 +514,7 @@ phina.define('fly.MainScene', {
 							gauge_e.tweener.fadeOut(20).play();
 							msgbox.tweener.fadeOut(20).play();
 							speed.tweener.fadeOut(20).play();
+							mark.tweener.fadeOut(20).play();
 						} else if (goal.enable && fly.colCup2D3(p1, goal.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goal.size / 2)) {
 							flyer.tweener.to({auto: 1}, 60).play();
 							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
@@ -545,6 +546,7 @@ phina.define('fly.MainScene', {
 							gauge_e.tweener.fadeOut(20).play();
 							msgbox.tweener.fadeOut(20).play();
 							speed.tweener.fadeOut(20).play();
+							mark.tweener.fadeOut(20).play();
 							this.goaled = true;
 						}
 

@@ -9,7 +9,7 @@ phina.define('fly.TitleScene', {
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
 		var sky = phina.asset.AssetManager.get('threecubetex', 'skybox').get();
-		var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
+		var plane = new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({map: phina.asset.AssetManager.get('threetexture', 'plane').get()}));
 		flyer.position.y = 1000;
 		var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 		directionalLight.position.set(0, 0, 30);
