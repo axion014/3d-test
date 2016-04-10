@@ -230,13 +230,13 @@ phina.define('fly.MainScene', {
 						}
 						for(var i = 0; i < stage.messages.length; i++) {
 							if (!stage.messages[i].progress || stage.messages[i].progress < 0.00001) {
-								(function() {
+								phina.namespace(function() {
 									var tmp = i;
 									this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
 									this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
-								}).bind(this)();
+								}.bind(this));
 							} else {
-								(function() {
+								phina.namespace(function() {
 									var tmp = i;
 									var callfunc = function() {
 										if (stage.messages[tmp].progress < this.progress) {
@@ -246,7 +246,7 @@ phina.define('fly.MainScene', {
 										}
 									}.bind(this);
 									this.on('enterframe', callfunc);
-								}).bind(this)();
+								}.bind(this));
 							}
 						}
 						var material = new THREE.ShaderMaterial({
