@@ -55,7 +55,8 @@ phina.define('fly.EnemyManager', {
 	},
 	createEnemyMulti: function(n, r, as, km) {
 		var autospawn = as.$safe(this.definedenemy[n].autospawn);
-		this.groups.push({num: autospawn.rep, message: km});
+		this.groups.push({num: autospawn.rep, message: km || {}});
+		if (r.boss) {this.scene.bossdefeated = false;}
 		for(var i = 0; i < autospawn.rep; i++) {
 			var nr = {position: new THREE.Vector3()};
 			THREE.$extend(nr, r);

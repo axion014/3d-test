@@ -3,7 +3,7 @@ phina.define('fly.MainScene', {
 
 	frame: 0, stage: 'arcade',
 	difficulty: 1, progress: 0,
-	score: 0, goaled: false,
+	score: 0, goaled: false, bossdefeated: true,
 
 	init: function(options) {
 		if (options.stage) {this.stage = options.stage;}
@@ -148,7 +148,7 @@ phina.define('fly.MainScene', {
 							var p2 = enemyManager.get(i).position.clone().sub(v2.clone().multiplyScalar(-0.5));
 							if (fly.colCup2D3(p1, p2, v1, v2, 15 + enemyManager.get(i).size * 3)) {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
-								this.hp -= enemyManager.get(i).hp * 50 * s.difficulty / this.v;
+								this.hp -= enemyManager.get(i).hp * 30 * s.difficulty / (this.v + 1);
 								s.score -= 3;
 								enemyManager.removeEnemy(i);
 							}
@@ -449,7 +449,7 @@ phina.define('fly.MainScene', {
 								enmBulletManager.removeBullet(i);
 							}
 						}
-						if (enmBulletManager.count() > 500) {for(var i = 0; enmBulletManager.count() > 500; i++) {enmBulletManager.removeBullet(0);}}
+						if (enmBulletManager.count() > 1000) {for(var i = 0; enmBulletManager.count() > 500; i++) {enmBulletManager.removeBullet(0);}}
 
 						this.flare('frame' + this.frame);
 						enemyManager.flare('frame' + this.frame);
