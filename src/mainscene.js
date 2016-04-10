@@ -74,6 +74,8 @@ phina.define('fly.MainScene', {
 							this.speed %= this.speeds.length;
 							speed.text = 'speed: ' + (this.speed + 1);
 						}
+
+						// Move and Rotate
 						this.myrot.x += this.row * 0.1;
 						this.myrot.y -= this.yo * 0.1;
 						this.myrot.x %= Math.PI * 2;
