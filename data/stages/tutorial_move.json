@@ -1,5 +1,5 @@
 {
-	"name": "Tutorial",
+	"name": "Tutorial:Move",
 	"enemys": [
 		{
 			"name": "enem1",
@@ -54,6 +54,8 @@
 		{"progress": 0.6, "time": 60, "text": "敵が大量に出現しています。\nCキーでレーザーを放ち、一掃しましょう。"},
 		{"progress": 0.8, "time": 30, "text": "ボスの登場です!ZキーやXキーを使い、\n早めに倒しましょう。"}
 	],
-	"goal": {"x": 5000, "z": 5000, "kill": 0},
+	"goals": [
+		{"x": 5000, "z": 5000, "kill": 0.9}
+	],
 	"rate": [20, 40, 50]
 }
