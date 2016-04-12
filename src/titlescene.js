@@ -5,12 +5,39 @@ phina.define('fly.TitleScene', {
 
 	init: function(params) {
 		this.superInit(params);
-
+		var start = function() {
+			this.startframe = 0;
+			layer.alphaNode = phina.glfilter.AlphaNode(layer.gl, {
+				width: layer.domElement.width, height: layer.domElement.height
+			});
+			layer.zoomBlurNode = phina.glfilter.ZoomBlurNode(layer.gl, {
+				width: layer.domElement.width, height: layer.domElement.height
+			});
+			layer.zoomBlurNode.setUniform(layer.gl, 'x', SCREEN_CENTER_X);
+			layer.zoomBlurNode.setUniform(layer.gl, 'y', SCREEN_CENTER_Y);
+			var setFilter = function() {
+				layer.alphaNode.setUniform(layer.gl, 'color', [1, 1, 1, this.startframe * 0.025]);
+				layer.zoomBlurNode.setUniform(layer.gl, 'strength', this.startframe * 0.4);
+				if (this.startframe === 40) {
+					layer.headNode.connectTo(layer.destNode);
+					this.off('enterframe', setFilter);
+					this.exit({stage: nowarg.stage, difficulty: nowarg.difficulty});
+				} else {
+					this.startframe++;
+				}
+			}.bind(this);
+			this.on('enterframe', setFilter);
+			layer.headNode
+				.connectTo(layer.zoomBlurNode)
+				.connectTo(layer.alphaNode)
+				.connectTo(layer.destNode);
+		}.bind(this);
+		var nowarg = {};
 		var menu = {
 			title: {
 				x: 0, y: 0, sub: [
-					{type: 'label', value: 'flygame', x: this.gridX.center(), y: this.gridY.span(4), size: 64},
-					{type: 'label', value: 'Click start', x: this.gridX.center(), y: this.gridY.span(12), size: 24, link: 'main'},
+					{type: 'label', value: 'flygame', x: this.gridX.center(), y: this.gridY.span(5), size: 64},
+					{type: 'label', value: 'Click start', x: this.gridX.center(), y: this.gridY.span(11), size: 32},
 					{type: 'model', name: 'flyer', value: phina.asset.AssetManager.get('threejson', 'fighter').get(), x: 0, y: 1000, z: 0},
 					{type: 'model', value: phina.asset.AssetManager.get('threecubetex', 'skybox').get(), x: 0, y: 1000, z: 0},
 					{
@@ -22,7 +49,51 @@ phina.define('fly.TitleScene', {
 			},
 			main: {
 				x: -500, y: -500, sub: [
-					{type: 'label', value: 'Main Menu', x: this.gridX.center(), y: this.gridY.span(4), size: 64}
+					{type: 'label', value: 'Main Menu', x: this.gridX.center(), y: this.gridY.span(4), size: 64},
+					{type: 'label', value: 'Campaign', x: this.gridX.center(), y: this.gridY.span(6), size: 32, link: 'difficulty'},
+					{type: 'label', value: 'Stage Select', x: this.gridX.center(), y: this.gridY.span(7), size: 32, link: 'stageselect'},
+					{type: 'label', value: 'Tutorial', x: this.gridX.center(), y: this.gridY.span(8), size: 32, link: 'tutorial'},
+					{type: 'label', value: 'Free Mode', x: this.gridX.center(), y: this.gridY.span(9), size: 32, link: 'difficulty', callback: function() {nowarg.stage = 'arcade'}},
+					{type: 'label', value: 'Settings', x: this.gridX.center(), y: this.gridY.span(10), size: 32, link: 'setting'},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(12), size: 32, link: 'title'}
+				]
+			},
+			tutorial: {
+				x: 750, y: 750, sub: [
+					{type: 'label', value: 'Tutorial', x: this.gridX.center(), y: this.gridY.span(5), size: 64},
+					{type: 'label', value: 'Move', x: this.gridX.center(), y: this.gridY.span(7), size: 32, callback: function() {nowarg.stage = 'tutorial_move';start();}},
+					{type: 'label', value: 'Attack', x: this.gridX.center(), y: this.gridY.span(8), size: 32, callback: function() {nowarg.stage = 'tutorial_attack';start();}},
+					{type: 'label', value: 'Special', x: this.gridX.center(), y: this.gridY.span(9), size: 32, callback: function() {nowarg.stage = 'tutorial_special';start();}},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(11), size: 32, link: 'main'}
+				]
+			},
+			stageselect: {
+				x: 500, y: -250, sub: [
+					{type: 'label', value: 'Stage Select', x: this.gridX.center(), y: this.gridY.span(4), size: 64},
+					{type: 'label', value: 'Main Menu', x: this.gridX.center(), y: this.gridY.span(12), size: 32, link: 'main'},
+				]
+			},
+			difficulty: {
+				x: -1000, y: -750, sub: [
+					{type: 'label', value: 'Difficulty', x: this.gridX.center(), y: this.gridY.span(5), size: 64},
+					{type: 'label', value: 'Easy', x: this.gridX.center(), y: this.gridY.span(7), size: 32, callback: function() {nowarg.difficulty = 0.5;start()}},
+					{type: 'label', value: 'Normal', x: this.gridX.center(), y: this.gridY.span(8), size: 32, callback: start},
+					{type: 'label', value: 'Hard', x: this.gridX.center(), y: this.gridY.span(9), size: 32, callback: function() {nowarg.difficulty = 1.5;start()}},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(11), size: 32, link: 'main'}
+				]
+			},
+			setting: {
+				x: -250, y: -1250, sub: [
+					{type: 'label', value: 'Setting', x: this.gridX.center(), y: this.gridY.span(4), size: 64},
+					{type: 'label', value: 'Credit', x: this.gridX.center(), y: this.gridY.span(8), size: 32, link: 'credit'},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(12), size: 32, link: 'main'}
+				]
+			},
+			credit: {
+				x: -5000, y: -5000, sub: [
+					{type: 'label', value: 'Credit', x: this.gridX.center(), y: this.gridY.span(4), size: 64},
+					{type: 'label', value: 'Programing: Shu', x: this.gridX.center(), y: this.gridY.span(6), size: 32},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(12), size: 32, link: 'setting'}
 				]
 			}
 		}
@@ -49,7 +120,11 @@ phina.define('fly.TitleScene', {
 		threelayer.addChildTo(layer);
 		group.addChildTo(layer);
 		var moveTo = function(x, y) {
-			group.tweener.to({x: x, y: y}, 1000, 'easeInOutCubic').play();
+			if (group.position.distance(phina.geom.Vector2(x, y)) > 2000) {
+				group.tweener.to({x: x, y: y}, group.position.distance(phina.geom.Vector2(x, y)) / 3, 'easeInOutQuint').play();
+			} else {
+				group.tweener.to({x: x, y: y}, 1000, 'easeInOutCubic').play();
+			}
 		}
 		menu.forIn(function(key, value) {
 			for(var j = 0; j < value.sub.length; j++) {
@@ -59,9 +134,26 @@ phina.define('fly.TitleScene', {
 						stroke: false, fontSize: selects.size}).addChildTo(group).setPosition(selects.x - value.x, selects.y - value.y);
 					if (selects.link) {
 						label.setInteractive(true);
-						label.onpointstart = function() {
-							moveTo(value[this.menuselects.link]);
-						}
+						phina.namespace(function() {
+							var link = selects.link;
+							label.on('pointstart', function() {
+								moveTo(menu[link].x, menu[link].y);
+								if (link === 'title') {
+									var waitFrame = function() {
+										this.on('pointstart', moveToMain);
+										this.off('enterframe', waitFrame)
+									}.bind(this);
+									this.on('enterframe', waitFrame);
+								}
+							}.bind(this));
+						}.bind(this));
+					}
+					if (selects.callback) {
+						label.setInteractive(true);
+						phina.namespace(function() {
+							var callback = selects.callback;
+							label.on('pointstart', function() {callback();});
+						});
 					}
 				} else if (selects.type === 'model') {
 					threelayer.scene.add(selects.value);
@@ -71,34 +163,6 @@ phina.define('fly.TitleScene', {
 				}
 			}
 		}.bind(this));
-
-		var start = function(stage) {
-			this.startframe = 0;
-			layer.alphaNode = phina.glfilter.AlphaNode(layer.gl, {
-				width: layer.domElement.width, height: layer.domElement.height
-			});
-			layer.zoomBlurNode = phina.glfilter.ZoomBlurNode(layer.gl, {
-				width: layer.domElement.width, height: layer.domElement.height
-			});
-			layer.zoomBlurNode.setUniform(layer.gl, 'x', SCREEN_CENTER_X);
-			layer.zoomBlurNode.setUniform(layer.gl, 'y', SCREEN_CENTER_Y);
-			var setfilter = function() {
-				layer.alphaNode.setUniform(layer.gl, 'color', [1, 1, 1, this.startframe * 0.025]);
-				layer.zoomBlurNode.setUniform(layer.gl, 'strength', this.startframe * 0.4);
-				if (this.startframe === 40) {
-					layer.headNode.connectTo(layer.destNode);
-					this.off('enterframe', setfilter);
-					this.exit({stage: stage});
-				} else {
-					this.startframe++;
-				}
-			}.bind(this);
-			this.on('enterframe', setfilter);
-			layer.headNode
-				.connectTo(layer.zoomBlurNode)
-				.connectTo(layer.alphaNode)
-				.connectTo(layer.destNode);
-		}
 		var moveToMain = function() {
 			moveTo(-500, -500);
 			this.off('pointstart', moveToMain);

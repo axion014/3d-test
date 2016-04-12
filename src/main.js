@@ -37,9 +37,6 @@ phina.define('fly.MainSequence', {
 				{
 					label: 'main',
 					className: 'fly.MainScene',
-					arguments: {
-						stage: 'tutorial'
-					}
 				}
 			]
 		});
