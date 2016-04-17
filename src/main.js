@@ -49,6 +49,7 @@ phina.define('fly.Application', {
 		this.superInit({
 			width: SCREEN_WIDTH,
 			height: SCREEN_HEIGHT,
+			query: '#game',
 			fit: false
 		});
 		threeext.extention();
