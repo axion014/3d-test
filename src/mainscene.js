@@ -366,7 +366,7 @@ phina.define('fly.MainScene', {
 				name.tweener2 = phina.accessory.Tweener().attachTo(name);
 				name.tweener.setUpdateType('fps');
 				name.tweener2.setUpdateType('fps');
-				name.tweener.set({width: 0, height: 96}).wait(10).to({width: 1024, height: 4}, 100, 'easeOutInCubic');
+				name.tweener.set({width: 0, height: 72}).wait(10).to({width: 720, height: 3}, 100, 'easeOutInCubic');
 				name.tweener2.set({alpha: 0}).wait(10).fadeIn(30).wait(40).fadeOut(30);
 
 				for(var i = 0; i < 4; i++) {
