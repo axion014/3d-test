@@ -27,8 +27,8 @@ phina.define('fly.ExplodeManager', {
 				tExplosion: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'explode').get()},
 				time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
 			},
-			vertexShader: phina.asset.AssetManager.get('text', 'expvertexshader').get(),
-			fragmentShader: phina.asset.AssetManager.get('text', 'expfragshader').get()
+			vertexShader: phina.asset.AssetManager.get('text', 'expvertexshader').data,
+			fragmentShader: phina.asset.AssetManager.get('text', 'expfragshader').data
 		});
 		var mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(20, 2), material).$safe({
 			time: t, timeMax: t

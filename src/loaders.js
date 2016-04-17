@@ -65,63 +65,6 @@ phina.define('fly.asset.ThreeCubeTex', {
 	get: function() {return this._asset.clone();}
 });
 
-phina.define('fly.asset.Text', {
-	superClass: 'phina.asset.Asset',
-
-	_asset: null,
-
-	init: function() {this.superInit();},
-
-	_load: function(resolve) {
-		var self = this;
-		var ajax = new XMLHttpRequest();
-		ajax.open('GET', this.src);
-		ajax.onreadystatechange = function() {
-			if (ajax.readyState === 4) {
-				if ([200, 201, 0].indexOf(ajax.status) !== -1) {
-					self._asset = ajax.response;
-					resolve(self);
-				} else {
-					self.loadError = true;
-					self.flare('loaderror');
-					if (ajax.status === 404) {
-						// not found
-						self.notFound	= true;
-						self.flare('notfound');
-					} else {
-						// �T�[�o�[�G���[
-						self.serverError = true;
-						self.flare('servererror');
-					}
-					reject(self);
-				}
-			}
-		}
-		ajax.send(null);
-	},
-
-	get: function() {return this._asset;}
-});
-
-phina.define('fly.asset.JSON', {
-	superClass: 'phina.asset.Asset',
-
-	_asset: {},
-
-	init: function() {this.superInit();},
-
-	_load: function(resolve) {
-		var self = this;
-		var json = fly.asset.Text();
-		json.load(this.src).then(function() {
-			this._asset = JSON.parse(json.get());
-			resolve(self);
-		}.bind(this))
-	},
-
-	get: function() {return this._asset;}
-});
-
 phina.define('fly.asset.Stage', {
 	superClass: 'phina.asset.Asset',
 
@@ -131,9 +74,9 @@ phina.define('fly.asset.Stage', {
 
 	_load: function(resolve) {
 		var self = this;
-		var json = fly.asset.JSON();
-		json.load(this.src).then(function() {
-			var stage = json.get();
+		var json = phina.asset.File();
+		json.load({path: this.src, dataType: 'json'}).then(function() {
+			var stage = json.data;
 			stage.$safe({enemys: [], winds: [], messages: [], goals: []});
 			for(var i = 0; i < stage.enemys.length; i++) {
 				stage.enemys[i].$safe({
@@ -179,18 +122,6 @@ phina.asset.AssetLoader.assetLoadFunctions.threetexture = function(key, path) {
 
 phina.asset.AssetLoader.assetLoadFunctions.threecubetex = function(key, path) {
 	var asset = fly.asset.ThreeCubeTex();
-	var flow = asset.load(path);
-	return flow;
-};
-
-phina.asset.AssetLoader.assetLoadFunctions.text = function(key, path) {
-	var asset = fly.asset.Text();
-	var flow = asset.load(path);
-	return flow;
-};
-
-phina.asset.AssetLoader.assetLoadFunctions.json = function(key, path) {
-	var asset = fly.asset.JSON();
 	var flow = asset.load(path);
 	return flow;
 };

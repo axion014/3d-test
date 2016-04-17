@@ -1,5 +1,5 @@
 phina.define('fly.SceneLoadingScene', {
-	superClass: 'phina.display.CanvasScene',
+	superClass: 'phina.display.DisplayScene',
 
 	init: function(options) {
 		options = (options || {}).$safe(fly.SceneLoadingScene.defaults)

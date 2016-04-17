@@ -1,42 +1,45 @@
 phina.define('fly.MainScene', {
 	superClass: 'fly.SceneLoadingScene',
 
-	frame: 0, stage: 'arcade',
-	difficulty: 1, progress: 0,
-	score: 0, goaled: false, bossdefeated: true,
+	frame: 0, progress: 0, score: 0, goaled: false, bossdefeated: true,
 
 	init: function(options) {
-		if (options.stage) {this.stage = options.stage;}
-		if (options.difficulty) {this.difficulty = options.difficulty;}
+		this.stage = options.stage || 'arcade';
+		this.difficulty = options.difficulty || 1;
 		this.superInit();
 		// Variables
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		threelayer.setOrigin(0, 0);
 
-		var map = phina.display.CircleShape({radius: 75, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: null});
+		var map = phina.display.CircleShape({x: SCREEN_WIDTH - 100, y: SCREEN_HEIGHT - 100,
+			radius: 75, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: null});
 		var playerpos = fly.DirectionShape({
-			fill: 'hsla(0, 50%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1, width: 2.5, height: 4
-		});
+			x: SCREEN_WIDTH - 100, y: SCREEN_HEIGHT - 100, fill: 'hsla(0, 50%, 70%, 0.5)',
+			stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1, width: 2.5, height: 4});
 		var direction = [];
 
-		var gauge_h = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(255, 64, 64, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
-		var gauge_e = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(64, 64, 255, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
-		var gauge_boss_h = phina.ui.Gauge({fill: 'rgba(0, 0, 0, 0)', gaugeColor: 'rgba(200, 16, 16, 0.3)', strokeWidth: 1, width: SCREEN_WIDTH / 1.2, height: 16});
+		var gauge_h = phina.ui.Gauge({x: 80, y: SCREEN_HEIGHT - 100, fill: 'rgba(0, 0, 0, 0)',
+			gaugeColor: 'rgba(255, 64, 64, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
+		var gauge_e = phina.ui.Gauge({x: 80, y: SCREEN_HEIGHT - 80, fill: 'rgba(0, 0, 0, 0)',
+			gaugeColor: 'rgba(64, 64, 255, 0.3)', value: 1000, maxValue: 1000, strokeWidth: 1, width: 128, height: 16});
+		var gauge_boss_h = phina.ui.Gauge({x: this.gridX.center(), y: 20, fill: 'rgba(0, 0, 0, 0)',
+			gaugeColor: 'rgba(200, 16, 16, 0.3)', strokeWidth: 1, width: SCREEN_WIDTH / 1.2, height: 16});
 
-		var msgbox = phina.display.RectangleShape({
-			fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)', strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
-		var message = phina.display.Label({text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
-		var speed = phina.display.Label({text: 'speed: 1', fontSize: 20, fill: 'hsla(0, 0%, 0%, 0.6)'});
-		var mark = fly.MarkShape();
-		var name = fly.Popup({label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
+		var msgbox = phina.display.RectangleShape({y: SCREEN_HEIGHT, fill: 'hsla(0, 0%, 30%, 0.5)', stroke: 'hsla(0, 0%, 30%, 0.25)',
+			strokeWidth: 1, cornerRadius: 5, width: SCREEN_WIDTH / 5, height: SCREEN_HEIGHT / 12});
+		var message = phina.display.Label({y: SCREEN_HEIGHT, text: '', fontSize: 16, fill: 'hsla(0, 0%, 0%, 0.6)', align: 'left'});
+		var speed = phina.display.Label({x: this.gridX.center(), y: SCREEN_HEIGHT - 20, text: 'speed: 1', fontSize: 12, fill: 'hsla(0, 0%, 0%, 0.6)'});
+		var mark = fly.MarkShape({x: this.gridX.center(), y: this.gridY.center()});
+		var name = fly.Popup({x: this.gridX.center(), y: this.gridY.center(), label: {text: '', fontSize: 23, fill: 'hsla(0, 0%, 0%, 0.8)'}});
 
 		var goals = [];
 		var goalraders = [];
 		var rates;
 
-		var resultbg = phina.display.RectangleShape({width: 480, strokeWidth: 0});
-		var resulttitle = phina.display.Label({text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
-		var resulttext = phina.display.Label({text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
+		var resultbg = phina.display.RectangleShape({x: this.gridX.center(), width: 360, strokeWidth: 0});
+		var resulttitle = phina.display.Label({x: this.gridX.center(), text: 'Result', fontSize: 48, fill: 'hsla(0, 0%, 0%, 0.8)'});
+		var resulttext = phina.display.Label({x: this.gridX.center(), text: '', fontSize: 24, fill: 'hsla(0, 0%, 0%, 0.8)'});
 
 		var enemyManager = fly.EnemyManager(this, threelayer.scene, gauge_boss_h, message);
 		var effectManager = enemyManager.effectmanager;
@@ -267,8 +270,8 @@ phina.define('fly.MainScene', {
 										tex2: {type: "t", value: phina.asset.AssetManager.get('threetexture', 'goal_disable').get()},
 										tex1_percentage: phina.app.Element().$safe({type: "f", value: 0.0}).addChildTo(this), time: {type: "f", value: 100 * Math.random()}, alpha: {type: "f", value: 1.0}
 									},
-									vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').get(),
-									fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').get()
+									vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').data,
+									fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').data
 								});
 								goals[i] = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goals[i].size, 2), material).$safe({
 									size: stage.goals[i].size, kill: stage.goals[i].kill, enable: false,
@@ -350,8 +353,8 @@ phina.define('fly.MainScene', {
 					.connectTo(layer.alphaNode)
 					.connectTo(layer.destNode);
 				threelayer.addChildTo(layer);
-				map.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
-				playerpos.addChildTo(layer).setPosition(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100);
+				map.addChildTo(layer);
+				playerpos.addChildTo(layer);
 				playerpos.rotation = 180;
 
 				var grad = name.canvas.context.createLinearGradient(0, -name.height / 2, 0, name.height / 2);
@@ -359,7 +362,7 @@ phina.define('fly.MainScene', {
 				grad.addColorStop(0.5, 'hsla(0, 0%, 0%, 0)');
 				grad.addColorStop(1, 'hsla(0, 0%, 0%, 0.6)');
 				name.fill = grad;
-				name.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+				name.addChildTo(layer);
 				name.tweener2 = phina.accessory.Tweener().attachTo(name);
 				name.tweener.setUpdateType('fps');
 				name.tweener2.setUpdateType('fps');
@@ -368,42 +371,41 @@ phina.define('fly.MainScene', {
 
 				for(var i = 0; i < 4; i++) {
 					direction[i] = fly.DirectionShape({
+						x: SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), y: SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2),
 						fill: 'hsla(0, {0}%, {1}%, 0.5)'.format(i === 0 ? 40 : 0, (i === 0 ? 10 : 0) + 10), stroke: null, width: 12, height: 7.5
-					}).addChildTo(layer)
-						.setPosition(SCREEN_WIDTH - 100 - 75 * Math.sin(i * Math.PI / 2), SCREEN_HEIGHT - 100 - 75 * Math.cos(i * Math.PI / 2));
+					}).addChildTo(layer);
 					direction[i].rotation = -i * 90;
 				}
-				mark.addChildTo(this).setPosition(this.gridX.center(), this.gridY.center());
+				mark.addChildTo(this);
 
-				gauge_h.addChildTo(layer).setPosition(80, SCREEN_HEIGHT - 100);
+				gauge_h.addChildTo(layer);
 				gauge_h.animation = false;
 				gauge_e.addChildTo(layer);
 				gauge_e.animation = false;
-				gauge_e.setPosition(80, SCREEN_HEIGHT - 80);
 				if (this.stage !== 'arcade') {
 					for(var i = 0; i < goalraders.length; i++) {goalraders[i].addChildTo(layer)};
-					gauge_boss_h.addChildTo(layer).setPosition(SCREEN_CENTER_X, 20);
+					gauge_boss_h.addChildTo(layer);
 					gauge_boss_h.tweener.setUpdateType('fps');
 					gauge_boss_h.alpha = 0;
 					gauge_boss_h.animation = false;
-					msgbox.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
+					msgbox.addChildTo(layer);
 					msgbox.live = 0;
-					message.addChildTo(layer).setPosition(0, SCREEN_HEIGHT);
-					resultbg.addChildTo(layer).setPosition(SCREEN_CENTER_X, resultbg.height / 2);
+					message.addChildTo(layer);
 					grad = resultbg.canvas.context.createLinearGradient(0, -SCREEN_CENTER_Y, 0, SCREEN_CENTER_Y);
 					grad.addColorStop(0, 'hsla(0, 0%, 0%, 0.6)');
 					grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
 				}
 				resultbg.fill = grad;
-				resulttitle.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
-				resulttext.addChildTo(layer).setPosition(SCREEN_CENTER_X, 0);
+				resultbg.addChildTo(layer);
+				resulttitle.addChildTo(layer);
+				resulttext.addChildTo(layer);
 				resultbg.tweener.setUpdateType('fps');
 				resulttitle.tweener.setUpdateType('fps');
 				resulttext.tweener.setUpdateType('fps');
 				resultbg.alpha = 0;
 				resulttitle.alpha = 0;
 				resulttext.alpha = 0;
-				speed.addChildTo(layer).setPosition(SCREEN_CENTER_X, SCREEN_HEIGHT - 20);
+				speed.addChildTo(layer);
 
 				enemyManager.addChildTo(this);
 				enmBulletManager.addChildTo(this);

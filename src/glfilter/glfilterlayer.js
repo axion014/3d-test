@@ -1,7 +1,7 @@
 phina.namespace(function() {
 
   phina.define("phina.glfilter.GLFilterLayer", {
-    superClass: 'phina.display.CanvasElement',
+    superClass: 'phina.display.DisplayElement',
 
     /**
      * 子孫要素の描画の面倒を自分で見る

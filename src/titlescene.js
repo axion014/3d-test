@@ -1,5 +1,5 @@
 phina.define('fly.TitleScene', {
-	superClass: 'phina.display.CanvasScene',
+	superClass: 'phina.display.DisplayScene',
 
 	frame: 0,
 
@@ -100,8 +100,9 @@ phina.define('fly.TitleScene', {
 
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
+		threelayer.setOrigin(0, 0);
 
-		var group = phina.display.CanvasElement();
+		var group = phina.display.DisplayElement();
 
 		var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 		directionalLight.position.set(0, 0, 30);
@@ -130,8 +131,9 @@ phina.define('fly.TitleScene', {
 			for(var j = 0; j < value.sub.length; j++) {
 				var selects = value.sub[j];
 				if (selects.type === 'label') {
-					var label = phina.display.Label({text: selects.value, fill: 'hsla(0, 0%, 0%, 0.6)',
-						stroke: false, fontSize: selects.size}).addChildTo(group).setPosition(selects.x - value.x, selects.y - value.y);
+					var label = phina.display.Label({x: selects.x - value.x, y: selects.y - value.y,
+						text: selects.value, fill: 'hsla(0, 0%, 0%, 0.6)',
+						stroke: false, fontSize: selects.size}).addChildTo(group);
 					if (selects.link) {
 						label.setInteractive(true);
 						phina.namespace(function() {
