@@ -80,17 +80,14 @@ phina.define('fly.EnemyManager', {
 			var angle = Math.atan2(xdist, zdist) - this.flyer.myrot.y + (Math.abs(this.flyer.myrot.x) > Math.PI / 2 && Math.abs(this.flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
 			this.enemyraders[i].setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 			if (this.get(i).hp <= 0) {
-				this.removeEnemy(i);
+				this.kill(i);
 				i--;
 			}
 		}
 	},
 
 	removeEnemy: function(i) {
-		this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
-		this.scene.score += this.get(i).size;
 		this.get(i).group.num--;
-		this.killcount++;
 		if (this.get(i).group.num === 0) {
 			var text = this.get(i).group.message.text;
 			if (this.get(i).group.message.offkill) {this.message.text = '';}
@@ -103,6 +100,13 @@ phina.define('fly.EnemyManager', {
 		this.elements.splice(i, 1);
 		this.enemyraders[i].remove();
 		this.enemyraders.splice(i, 1);
+	},
+
+	kill: function(i) {
+		this.effectmanager.explode(this.get(i).position, this.get(i).size, this.get(i).explodeTime);
+		this.scene.score += this.get(i).size;
+		this.killcount++;
+		this.removeEnemy(i);
 	},
 
 	// Enemys routine

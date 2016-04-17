@@ -57,7 +57,6 @@ phina.define('fly.MainScene', {
 					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
 					av: new THREE.Vector3(), sub1id: 0, sub2id: 1, auto: 1,
 					update: function(p, k, s) {
-						this.v += 0.05;
 						if (s.stage !== 'arcade') {
 							var c = (p.x - SCREEN_CENTER_X) * (1 - this.auto) - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(
 								goals.first.position.x - this.position.x, goals.first.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
@@ -91,7 +90,7 @@ phina.define('fly.MainScene', {
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, this.myrot.z1 + this.myrot.z2));
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, this.myrot.x));
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, this.myrot.y));
-						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v);
+						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v + 5);
 						this.position.add(this.av);
 						this.av.multiplyScalar(0.98);
 
@@ -160,7 +159,7 @@ phina.define('fly.MainScene', {
 								effectManager.explode(enemyManager.get(i).position, enemyManager.get(i).size, 30);
 								this.hp -= enemyManager.get(i).hp * 30 * s.difficulty / (this.v + 1);
 								s.score -= 3;
-								enemyManager.removeEnemy(i);
+								enemyManager.kill(i);
 							}
 						}
 						if (this.position.y <= 0) {this.hp = 0;}
