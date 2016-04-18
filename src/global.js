@@ -3,10 +3,10 @@ var SCREEN_CENTER_X = 240;
 var SCREEN_HEIGHT = 720;
 var SCREEN_CENTER_Y = 360;
 
-phina.display.DisplayScene.default = {
+phina.display.DisplayScene.default.$extend({
 	width: SCREEN_WIDTH,
 	height: SCREEN_HEIGHT
-};
+});
 
 //3��
 var Axis = {

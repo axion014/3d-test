@@ -6,6 +6,7 @@ phina.define('fly.MainScene', {
 	init: function(options) {
 		this.stage = options.stage || 'arcade';
 		this.difficulty = options.difficulty || 1;
+		this.space = options.space || false;
 		this.superInit();
 		// Variables
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
@@ -60,7 +61,7 @@ phina.define('fly.MainScene', {
 					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
 					av: new THREE.Vector3(), sub1id: 0, sub2id: 1, auto: 1,
 					update: function(p, k, s) {
-						if (s.stage !== 'arcade') {
+						if (s.stage !== 'arcade' && this.auto !== 0) { // Auto move
 							var c = (p.x - SCREEN_CENTER_X) * (1 - this.auto) - (s.goaled ? -10 : Math.max(Math.min((Math.atan2(
 								goals.first.position.x - this.position.x, goals.first.position.z - this.position.z) - this.myrot.y) * 100, 100), -100) * this.auto);
 							this.myrot.z1 += c * 0.00008;
@@ -69,15 +70,19 @@ phina.define('fly.MainScene', {
 							this.row += ((p.y - SCREEN_CENTER_Y) * (1 - this.auto) - Math.max(Math.min((Math.atan2(
 								goals.first.position.y + ty - this.position.y, phina.geom.Vector2(goals.first.position.x - this.position.x, goals.first.position.z - this.position.z).length()
 								) + this.myrot.x) * 100, 100), -100) * this.auto) * this.ups;
-						} else {
+						} else { // Manual move
 							var c = p.x - SCREEN_CENTER_X;
 							this.myrot.z1 += c * 0.00008;
 							this.yo += c * 0.00008;
 							this.row += (p.y - SCREEN_CENTER_Y) * this.ups;
 						}
-						if (p.getPointing()) {
+						if (p.getPointing()) { // Speed up
 							this.e--;
-							this.v += this.speeds[this.speed];
+							if (s.space) {
+								this.av.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.speeds[this.speed]);
+							} else {
+								this.v += this.speeds[this.speed];
+							}
 						}
 						if (k.getKeyDown(68)) { // D Key
 							this.speed++;
@@ -93,9 +98,8 @@ phina.define('fly.MainScene', {
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.z, this.myrot.z1 + this.myrot.z2));
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.x, this.myrot.x));
 						this.rotate(new THREE.Quaternion().setFromAxisAngle(Axis.y, this.myrot.y));
-						this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v + 5);
+						if (!s.space) {this.position.addScaledVector(Axis.z.clone().applyQuaternion(this.quaternion).normalize(), this.v + 5);}
 						this.position.add(this.av);
-						this.av.multiplyScalar(0.98);
 
 						this.myrot.z1 *= 0.95;
 						this.locked = k.getKey(16); // Shift key
@@ -109,7 +113,13 @@ phina.define('fly.MainScene', {
 						}
 						this.yo *= 0.95;
 						this.row *= 0.9;
-						this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0); // V Key
+						if (s.space) { // Speed loss
+							this.v *= 0.995 - Math.abs(c) * 0.00001 - (k.getKey(86) ? 0.01 : 0); // V Key
+							this.av.multiplyScalar(0.995 - (k.getKey(86) ? 0.01 : 0));
+						} else {
+							this.v *= 0.98 - Math.abs(c) * 0.00006 - (k.getKey(86) ? 0.05 : 0);
+							this.av.multiplyScalar(0.98 - (k.getKey(86) ? 0.05 : 0));
+						}
 
 						if (this.e > 0) {
 							if (k.getKey(90)) { // Z Key
@@ -296,7 +306,8 @@ phina.define('fly.MainScene', {
 									.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 							}.bind(this));
 						}
-						rates = stage.rate;
+						this.rate = stage.rate;
+						this.space = stage.space;
 						resolve();
 					}.bind(this);
 					if (!phina.asset.AssetManager.get('stage', this.stage)) {
@@ -560,16 +571,16 @@ phina.define('fly.MainScene', {
 							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
 							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
 							var rate = '';
-							if (this.score >= rates[2]) {
+							if (this.score >= this.rate[2]) {
 								rate = 'Perfect';
-							} else if (this.score >= rates[1]) {
+							} else if (this.score >= this.rate[1]) {
 								rate = 'Good';
-							} else if (this.score >= rates[0]) {
+							} else if (this.score >= this.rate[0]) {
 								rate = 'Middle';
 							} else {
 								rate = 'Bad';
 							}
-							this.score += rates[0] * flyer.hp / 1000;
+							this.score += this.rates[0] * flyer.hp / 1000;
 							if (this.score < 0) {this.score = 0;}
 							resulttext.text = 'Score: ' + this.score.toFixed(0)
 								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'

@@ -60,11 +60,12 @@ phina.define('fly.TitleScene', {
 			},
 			tutorial: {
 				x: 750, y: 750, sub: [
-					{type: 'label', value: 'Tutorial', x: this.gridX.center(), y: this.gridY.span(5), size: 64},
-					{type: 'label', value: 'Move', x: this.gridX.center(), y: this.gridY.span(7), size: 32, callback: function() {nowarg.stage = 'tutorial_move';start();}},
-					{type: 'label', value: 'Attack', x: this.gridX.center(), y: this.gridY.span(8), size: 32, callback: function() {nowarg.stage = 'tutorial_attack';start();}},
-					{type: 'label', value: 'Special', x: this.gridX.center(), y: this.gridY.span(9), size: 32, callback: function() {nowarg.stage = 'tutorial_special';start();}},
-					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(11), size: 32, link: 'main'}
+					{type: 'label', value: 'Tutorial', x: this.gridX.center(), y: this.gridY.span(4.5), size: 64},
+					{type: 'label', value: 'Move', x: this.gridX.center(), y: this.gridY.span(6.5), size: 32, callback: function() {nowarg.stage = 'tutorial_move';start();}},
+					{type: 'label', value: 'Attack', x: this.gridX.center(), y: this.gridY.span(7.5), size: 32, callback: function() {nowarg.stage = 'tutorial_attack';start();}},
+					{type: 'label', value: 'Special', x: this.gridX.center(), y: this.gridY.span(8.5), size: 32, callback: function() {nowarg.stage = 'tutorial_special';start();}},
+					{type: 'label', value: 'Space', x: this.gridX.center(), y: this.gridY.span(9.5), size: 32, callback: function() {nowarg.stage = 'tutorial_space';start();}},
+					{type: 'label', value: 'Back', x: this.gridX.center(), y: this.gridY.span(11.5), size: 32, link: 'main'}
 				]
 			},
 			stageselect: {
