@@ -46,6 +46,7 @@ phina.define('fly.MainScene', {
 		var effectManager = enemyManager.effectmanager;
 		var enmBulletManager = fly.BulletManager(threelayer.scene);
 		enemyManager.enmBulletManager = enmBulletManager;
+		var obstacleManager = fly.ObstacleManager(threelayer.scene);
 		var windManager = fly.WindManager(threelayer.scene);
 
 		var flyer = phina.asset.AssetManager.get('threejson', 'fighter').get();
@@ -175,6 +176,9 @@ phina.define('fly.MainScene', {
 								enemyManager.kill(i);
 							}
 						}
+						for (var i = 0; i < obstacleManager.elements.length; i++) {
+							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).scale, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
+						}
 						if (this.position.y <= 0) {this.hp = 0;}
 					},
 					sub: [
@@ -246,6 +250,9 @@ phina.define('fly.MainScene', {
 								enemyManager.defineEnemy(stage.enemys[i].name);
 							}
 							enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn, stage.enemys[i].killmes);
+						}
+						for(var i = 0; i < stage.obstacles.length; i++) {
+							obstacleManager.createObstacle(stage.obstacles[i].position, stage.obstacles[i].quaternion, stage.obstacles[i].scale);
 						}
 						for(var i = 0; i < stage.winds.length; i++) {
 							windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);

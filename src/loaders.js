@@ -77,7 +77,7 @@ phina.define('fly.asset.Stage', {
 		var json = phina.asset.File();
 		json.load({path: this.src, dataType: 'json'}).then(function() {
 			var stage = json.data;
-			stage.$safe({enemys: [], winds: [], messages: [], goals: []});
+			stage.$safe({enemys: [], obstacles: [], winds: [], messages: [], goals: []});
 			for(var i = 0; i < stage.enemys.length; i++) {
 				stage.enemys[i].$safe({
 					position: {}, rotation: {}, option: {}, autospawn: {}, random: {}, killmes: {}
@@ -97,6 +97,11 @@ phina.define('fly.asset.Stage', {
 				stage.winds[i].$safe({v: 0.2, x: 0, y: 0, color: [0, 0, 0]});
 				stage.winds[i].position = new THREE.Vector2(stage.winds[i].x, stage.winds[i].y);
 				stage.winds[i].c = stage.winds[i].color[0] << 16 | stage.winds[i].color[1] << 8 | stage.winds[i].color[2];
+			}
+			for(var i = 0; i < stage.obstacles.length; i++) {
+				stage.obstacles[i].position = new THREE.Vector3(stage.obstacles[i].position.x || 0, stage.obstacles[i].position.y || 0, stage.obstacles[i].position.z || 0);
+				stage.obstacles[i].quaternion = new THREE.Quaternion().rotate(stage.obstacles[i].rotation.x || 0, stage.obstacles[i].rotation.y || 0, stage.obstacles[i].rotation.z || 0);
+				stage.obstacles[i].scale = new THREE.Vector3(stage.obstacles[i].scale.x || 100, stage.obstacles[i].scale.y || 100, stage.obstacles[i].scale.z || 100);
 			}
 			for(var i = 0; i < stage.messages.length; i++) {stage.messages[i].$safe({time: 0, text: ''});}
 			for(var i = 0; i < stage.goals.length; i++) {stage.goals[i].$safe({x: 0, y: 0, z: 0, size: 100});}
