@@ -2,7 +2,6 @@ phina.define('fly.asset.ThreeJSON', {
 	superClass: 'phina.asset.Asset',
 
 	data: null,
-
 	init: function() {this.superInit();},
 
 	_load: function(resolve) {
@@ -19,7 +18,6 @@ phina.define('fly.asset.ThreeTexture', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: null,
-
 	init: function() {this.superInit();},
 
 	_load: function(resolve) {
@@ -41,7 +39,6 @@ phina.define('fly.asset.ThreeCubeTex', {
 	superClass: 'phina.asset.Asset',
 
 	_asset: null,
-
 	init: function() {this.superInit();},
 
 	_load: function(resolve) {
@@ -68,8 +65,7 @@ phina.define('fly.asset.ThreeCubeTex', {
 phina.define('fly.asset.Stage', {
 	superClass: 'phina.asset.Asset',
 
-	data: [],
-
+	data: {},
 	init: function() {this.superInit();},
 
 	_load: function(resolve) {
@@ -79,18 +75,14 @@ phina.define('fly.asset.Stage', {
 			var stage = json.data;
 			stage.$safe({enemys: [], winds: [], messages: [], goals: []});
 			for(var i = 0; i < stage.enemys.length; i++) {
-				stage.enemys[i].$safe({
-					position: {}, rotation: {}, option: {}, autospawn: {}, random: {}, killmes: {}
-				});
-				stage.enemys[i].position.$safe({x: 0, y: 0, z: 0});
-				stage.enemys[i].rotation.$safe({x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0});
+				stage.enemys[i].$safe({position: {}, rotation: {}, option: {}, autospawn: {}, random: {}, killmes: {}});
 				stage.enemys[i].autospawn.$safe({time: 0, progress: 0, random: {}});
 				stage.enemys[i].autospawn.random.$safe({x: 0, y: 0, z: 0});
 				stage.enemys[i].killmes.$safe({time: 0, text: '', offkill: false});
 				stage.enemys[i].option.$safe({
-					position: new THREE.Vector3(stage.enemys[i].position.x, stage.enemys[i].position.y, stage.enemys[i].position.z),
-					quaternion: new THREE.Quaternion().rotate(stage.enemys[i].rotation.x, stage.enemys[i].rotation.y, stage.enemys[i].rotation.z),
-					c: new THREE.Quaternion().rotate(stage.enemys[i].rotation.cx, stage.enemys[i].rotation.cy, stage.enemys[i].rotation.cz)
+					position: new THREE.Vector3(stage.enemys[i].position.x || 0, stage.enemys[i].position.y || 0, stage.enemys[i].position.z || 0),
+					quaternion: new THREE.Quaternion().rotate(stage.enemys[i].rotation.x || 0, stage.enemys[i].rotation.y || 0, stage.enemys[i].rotation.z || 0),
+					c: new THREE.Quaternion().rotate(stage.enemys[i].rotation.cx || 0, stage.enemys[i].rotation.cy || 0, stage.enemys[i].rotation.cz || 0)
 				});
 			}
 			for(var i = 0; i < stage.winds.length; i++) {
