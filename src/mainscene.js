@@ -295,7 +295,7 @@ phina.define('fly.MainScene', {
 									update: function(s) {
 										material.uniforms.time.value += 0.005 * Math.random();
 										if (!this.enable) {
-											if (this === goals.first && (this !== goals.last || s.bossdefeated) && enemyManager.killcount > enemyManager.allcount * this.kill) {
+											if (this === goals.first && (this !== goals.last || s.bossdefeated) && enemyManager.killcount >= enemyManager.allcount * this.kill) {
 												material.uniforms.tex1_percentage.tweener.to({value: 1}, 50).play();
 												goalraders.first.fill = 'hsla(190, 100%, 70%, 0.5)'
 												this.enable = true;
@@ -573,38 +573,45 @@ phina.define('fly.MainScene', {
 							speed.tweener.fadeOut(20).play();
 							mark.tweener.fadeOut(20).play();
 						} else if (this.stage !== 'arcade' && goals.first.enable && fly.colCup2D3(p1, goals.first.position.clone(), v1, new THREE.Vector3(0, 0, 0), 15 + goals.first.size / 2)) {
-							flyer.tweener.to({auto: 1}, 60).play();
-							resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
-							resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
-							resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
-							var rate = '';
-							if (this.score >= this.rate[2]) {
-								rate = 'Perfect';
-							} else if (this.score >= this.rate[1]) {
-								rate = 'Good';
-							} else if (this.score >= this.rate[0]) {
-								rate = 'Middle';
+							if (goals.length === 1) {
+								flyer.tweener.to({auto: 1}, 60).play();
+								resultbg.tweener.to({alpha: 1, height: SCREEN_HEIGHT, y: SCREEN_CENTER_Y}, 5).play();
+								resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
+								resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
+								var rate = '';
+								if (this.score >= this.rate[3]) {
+									rate = 'Perfect';
+								} else if (this.score >= this.rate[2]) {
+									rate = 'Good';
+								} else if (this.score >= this.rate[1]) {
+									rate = 'Middle';
+								} else {
+									rate = 'Bad';
+								}
+								this.score += this.rates[0] * flyer.hp / 1000;
+								if (this.score < 0) {this.score = 0;}
+								resulttext.text = 'Score: ' + this.score.toFixed(0)
+									+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+									+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
+									+ '\nRate: ' + rate;
+								message.text = '';
+								map.tweener.fadeOut(20).play();
+								for (var i = 0; i < goalraders.length; i++) {goalraders[i].tweener.fadeOut(20).play();}
+								for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
+								for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
+								playerpos.tweener.fadeOut(20).play();
+								gauge_h.tweener.fadeOut(20).play();
+								gauge_e.tweener.fadeOut(20).play();
+								msgbox.tweener.fadeOut(20).play();
+								speed.tweener.fadeOut(20).play();
+								mark.tweener.fadeOut(20).play();
+								this.goaled = true;
 							} else {
-								rate = 'Bad';
+								goals.first.parent.remove(goals.first);
+								goals.splice(0, 1);
+								goalraders.first.remove();
+								goalraders.splice(0, 1);
 							}
-							this.score += this.rates[0] * flyer.hp / 1000;
-							if (this.score < 0) {this.score = 0;}
-							resulttext.text = 'Score: ' + this.score.toFixed(0)
-								+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
-								+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
-								+ '\nRate: ' + rate;
-							message.text = '';
-							map.tweener.fadeOut(20).play();
-							for (var i = 0; i < goalraders.length; i++) {goalraders[i].tweener.fadeOut(20).play();}
-							for (var i = 0; i < enemyManager.count(); i++) {enemyManager.enemyraders[i].tweener.fadeOut(20).play();}
-							for(var i = 0; i < 4; i++) {direction[i].tweener.fadeOut(20).play();}
-							playerpos.tweener.fadeOut(20).play();
-							gauge_h.tweener.fadeOut(20).play();
-							gauge_e.tweener.fadeOut(20).play();
-							msgbox.tweener.fadeOut(20).play();
-							speed.tweener.fadeOut(20).play();
-							mark.tweener.fadeOut(20).play();
-							this.goaled = true;
 						}
 
 						if (this.frame % 600 === 0) {this.score--;}
