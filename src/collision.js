@@ -22,21 +22,21 @@ fly.colobbsphere = function(p1, p2, l, q, r) { // http://marupeke296.com/COL_3D_
 	var vec = new THREE.Vector3(0, 0, 0);
 	var d = p2.clone().sub(p1);
 	if (l.x > 0) {
-		var direct = Axis.x.clone.rotate(q);
+		var direct = Axis.x.clone().applyQuaternion(q);
 		var s = Math.abs(d.dot(direct) / l.x);
 		if (s > 1) {
 			vec.add((1 - s) * l.x * direct);
 		}
 	}
 	if (l.y > 0) {
-		direct = Axis.y.clone.rotate(q);
+		direct = Axis.y.clone().applyQuaternion(q);
 		s = Math.abs(d.dot(direct) / l.y);
 		if (s > 1) {
 			vec.add((1 - s) * l.y * direct);
 		}
 	}
 	if (l.z > 0) {
-		direct = Axis.z.clone.rotate(q);
+		direct = Axis.z.clone().applyQuaternion(q);
 		s = Math.abs(d.dot(direct) / l.z);
 		if (s > 1) {
 			vec.add((1 - s) * l.z * direct);

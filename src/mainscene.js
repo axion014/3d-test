@@ -177,7 +177,7 @@ phina.define('fly.MainScene', {
 							}
 						}
 						for (var i = 0; i < obstacleManager.elements.length; i++) {
-							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).scale, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
+							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).size, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
 						}
 						if (this.position.y <= 0) {this.hp = 0;}
 					},
@@ -291,7 +291,7 @@ phina.define('fly.MainScene', {
 									fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').data
 								});
 								goals[i] = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goals[i].size, 2), material).$safe({
-									size: stage.goals[i].size, kill: stage.goals[i].kill, enable: false,
+									size: stage.goals[i].size, kill: stage.goals[i].kill, message: stage.goals[i].message, enable: false,
 									update: function(s) {
 										material.uniforms.time.value += 0.005 * Math.random();
 										if (!this.enable) {
@@ -324,13 +324,17 @@ phina.define('fly.MainScene', {
 						loader.load(asset).then(function() {
 							var stage = phina.asset.AssetManager.get('stage', this.stage).get();
 							asset = {threejson: {}};
-							for(var i = 0; i < stage.enemys.length; i++) {
-								if (!phina.asset.AssetManager.get('threejson', stage.enemys[i].name)) {
-									asset.threejson[stage.enemys[i].name] = 'data/models/' + enemyManager.enemys[stage.enemys[i].name].filename + '.min.json';
+							if (stage.enemys.length !== 0) {
+								for(var i = 0; i < stage.enemys.length; i++) {
+									if (!phina.asset.AssetManager.get('threejson', stage.enemys[i].name)) {
+										asset.threejson[stage.enemys[i].name] = 'data/models/' + enemyManager.enemys[stage.enemys[i].name].filename + '.min.json';
+									}
 								}
+								loader.onload = load;
+								loader.load(asset);
+							} else {
+								load();
 							}
-							loader.onload = load;
-							loader.load(asset)
 						}.bind(this));
 					} else {
 						load();
@@ -579,6 +583,7 @@ phina.define('fly.MainScene', {
 								resulttitle.tweener.to({alpha: 1, y: SCREEN_CENTER_Y / 3}, 3).play();
 								resulttext.tweener.wait(10).to({alpha: 1, y: SCREEN_CENTER_Y * 0.6}, 3).play();
 								var rate = '';
+								this.score += this.rate[0] * flyer.hp / 1000;
 								if (this.score >= this.rate[3]) {
 									rate = 'Perfect';
 								} else if (this.score >= this.rate[2]) {
@@ -588,7 +593,6 @@ phina.define('fly.MainScene', {
 								} else {
 									rate = 'Bad';
 								}
-								this.score += this.rates[0] * flyer.hp / 1000;
 								if (this.score < 0) {this.score = 0;}
 								resulttext.text = 'Score: ' + this.score.toFixed(0)
 									+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
@@ -607,6 +611,8 @@ phina.define('fly.MainScene', {
 								mark.tweener.fadeOut(20).play();
 								this.goaled = true;
 							} else {
+								var tmp = goals.first.message;
+								this.on('frame' + (this.frame + 30), function() {message.text = tmp;}.bind(this));
 								goals.first.parent.remove(goals.first);
 								goals.splice(0, 1);
 								goalraders.first.remove();
