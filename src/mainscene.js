@@ -59,7 +59,7 @@ phina.define('fly.MainScene', {
 				flyer.tweener.setUpdateType('fps');
 				flyer.$safe({ // Player control
 					speeds: [0.1, 0.25, 0.45, 0.95], myrot: {x: 0, y: 0, z1: 0, z2: 0},
-					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 1000, hp: 1000, speed: 0, ups: 0.00015,
+					row: 0, yo: 0, v: 0, s1c: 0, s2c: 0, e: 2000, hp: 1000, speed: 0, ups: 0.00015,
 					av: new THREE.Vector3(), sub1id: 0, sub2id: 1, auto: 1,
 					update: function(p, k, s) {
 						if (s.stage !== 'arcade' && this.auto !== 0) { // Auto move
@@ -138,7 +138,7 @@ phina.define('fly.MainScene', {
 							if (k.getKeyDown(67) && this.s2c === 0) {this.sub[this.sub2id]();} // C Key
 							if (this.rgl > 0) {
 								this.rgl--;
-								this.beam(30, 2, 15, 0, s);
+								this.beam(35, 2, 15, 0, s);
 							}
 							if (this.brl > 0) {
 								this.brl--;
@@ -148,7 +148,7 @@ phina.define('fly.MainScene', {
 						if (this.s1c > 0) {this.s1c--;}
 						if (this.s2c > 0) {this.s2c--;}
 						gauge_e.value = this.e;
-						if (this.e < 1000) {this.e += 4;}
+						if (this.e < 2000) {this.e += 4;}
 						gauge_h.value = this.hp;
 
 						for (var i = 0; i < windManager.elements.length; i++) {
@@ -193,10 +193,10 @@ phina.define('fly.MainScene', {
 							}
 						}.bind(flyer),
 						function() {
-							if (this.e >= 700) {
+							if (this.e >= 1500) {
 								this.s2c = 250;
 								this.brl = 17;
-								this.e -= 700;
+								this.e -= 1500;
 								effectManager.ray(this, 0xffffff, 0.2, 8, 27, 24);
 								effectManager.ray(this, 0xffcccc, 0.2, 12, 27, 22);
 								effectManager.ray(this, 0xff8888, 0.2, 18, 27, 20);
