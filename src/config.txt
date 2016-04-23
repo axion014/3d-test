@@ -19,6 +19,7 @@ popup.js
 effects.js
 enemy.js
 bullet.js
+obstacle.js
 wind.js
 loadingscene.js
 splashloadingscene.js

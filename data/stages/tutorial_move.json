@@ -1,61 +1,25 @@
 {
 	"name": "Tutorial:Move",
-	"enemys": [
+	"obstacles": [
 		{
-			"name": "enem1",
-			"position": {"x": 550, "y": 940, "z": 410},
-			"autospawn": {"time": 300, "rep": 1},
-			"killmes": {"time": 30, "text": "無事に敵を撃破できましたね。\nレーダーの端にゴールの方向が表示されています。\nクリックで前進して、その方向に向かいましょう。"}
+			"position": {"x": 3750, "y": 300, "z": 3750},
+			"scale": {"x": 250, "y": 500, "z": 250}
 		},
 		{
-			"name": "enem1",
-			"position": {"x": 1550, "y": 860, "z": 1710},
-			"rotation": {"y": 0.5},
-			"option": {"v": 1},
-			"autospawn": {
-				"random": {"x": 50, "y": 50, "z": 50},
-				"progress": 0.2
-			},
-			"killmes": {"offkill": true}
-		},
-		{
-			"name": "enem1",
-			"position": {"x": 2680, "y": 600, "z": 2400},
-			"option": {"v": 0.8, "chase": 0.2, "mindist": 120},
-			"autospawn": {"progress": 0.4},
-			"killmes": {"offkill": true}
-		},
-		{
-			"name": "enem1",
-			"position": {"x": 3520, "y": 420, "z": 3250},
-			"rotation": {"y": 2},
-			"option": {"v": 0.01},
-			"autospawn": {
-				"random": {"x": 30, "y": 30, "z": 30},
-				"progress": 0.6,
-				"delay": 5,
-				"rep": 20
-			},
-			"killmes": {"offkill": true}
-		},
-		{
-			"name": "enem3",
-			"position": {"x": 4800, "y": 250, "z": 4520},
-			"rotation": {"x": 0.1, "y": -0.2},
-			"option": {"boss": true},
-			"autospawn": {"progress": 0.8},
-			"killmes": {"time": 50, "text": "ゴールが出現しました。突入してください。", "offkill": true}
+			"position": {"x": 2250, "y": 100, "z": 2250},
+			"scale": {"x": 250, "y": 500, "z": 250}
 		}
 	],
 	"messages": [
 		{"time": 140, "text": "このゲームでは、マウスカーソルで自機を操作します。\n試しに左右に動かしてみましょう。"},
-		{"time": 300, "text": "敵が出現しました。右下のレーダーを見て\n敵の方向を向き、Zキーで攻撃しましょう。"},
-		{"progress": 0.4, "text": "この敵は、こちらを狙って攻撃してきます。\nよけながら戦いましょう。"},
-		{"progress": 0.6, "time": 60, "text": "敵が大量に出現しています。\nCキーでレーザーを放ち、一掃しましょう。"},
-		{"progress": 0.8, "time": 30, "text": "ボスの登場です!ZキーやXキーを使い、\n早めに倒しましょう。"}
+		{"time": 300, "text": "次に、水色で表示されているゴールへ向かって、\nクリックで移動してみましょう。"}
 	],
 	"goals": [
-		{"x": 5000, "z": 5000, "kill": 0.9}
+		{"x": 1000, "y": 800, "z": 2000},
+		{"x": 3500, "y": 600, "z": 2500},
+		{"x": 4500, "y": 400, "z": 4500, "message": "よくできました! 次に、障害物をよけながら目的地を目指しましょう。"},
+		{"x": 3000, "y": 200, "z": 3000},
+		{"x": 1500, "z": 1500}
 	],
-	"rate": [20, 40, 50]
+	"rate": [12, 6, 9, 10]
 }
