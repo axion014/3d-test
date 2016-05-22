@@ -52,6 +52,7 @@ phina.define('fly.Application', {
 			query: '#game',
 			fit: false
 		});
+		this.canvas.fitScreen(false)
 		threeext.extention();
 		this.replaceScene(fly.MainSequence());
 	},

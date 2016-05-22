@@ -40,11 +40,9 @@ phina.define('fly.TitleScene', {
 					{type: 'label', value: 'Click start', x: this.gridX.center(), y: this.gridY.span(11), size: 32},
 					{type: 'model', name: 'flyer', value: phina.asset.AssetManager.get('threejson', 'fighter').get(), x: 0, y: 1000, z: 0},
 					{type: 'model', value: phina.asset.AssetManager.get('threecubetex', 'skybox').get(), x: 0, y: 1000, z: 0},
-					{
-						type: 'model', value: new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({
-							map: phina.asset.AssetManager.get('threetexture', 'plane').get()
-						})), x: 0, y: 0, z: 0, init: function(model) {model.rotate(-Math.PI / 2, 0, 0);}
-					}
+					{type: 'model', value: new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({
+						map: phina.asset.AssetManager.get('threetexture', 'plane').get()
+					})), x: 0, y: 0, z: 0, init: function(model) {model.rotate(-Math.PI / 2, 0, 0);}}
 				]
 			},
 			main: {
