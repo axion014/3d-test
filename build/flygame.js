@@ -1548,6 +1548,10 @@ phina.define('fly.TitleScene', {
 				x: 0, y: 0, sub: [
 					{type: 'label', value: 'flygame', x: this.gridX.center(), y: this.gridY.span(5), size: 64},
 					{type: 'label', value: 'Click start', x: this.gridX.center(), y: this.gridY.span(11), size: 32},
+					{type: 'label', value: 'Exit', x: this.gridX.span(2), y: this.gridY.span(15), size: 32, callback: function() {
+						history.back();
+						window.close();
+					}},
 					{type: 'model', name: 'flyer', value: phina.asset.AssetManager.get('threejson', 'fighter').get(), x: 0, y: 1000, z: 0},
 					{type: 'model', value: phina.asset.AssetManager.get('threecubetex', 'skybox').get(), x: 0, y: 1000, z: 0},
 					{type: 'model', value: new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({
@@ -2383,9 +2387,8 @@ phina.define('fly.Application', {
 			width: SCREEN_WIDTH,
 			height: SCREEN_HEIGHT,
 			query: '#game',
-			fit: false
+			fit: true
 		});
-		this.canvas.fitScreen(false)
 		threeext.extention();
 		this.replaceScene(fly.MainSequence());
 	},
