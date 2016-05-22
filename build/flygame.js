@@ -642,22 +642,11 @@ phina.namespace(function() {
 
 });
 
-var yrate = 1.5;
-var scale = 0.9;
-if (window.innerHeight / window.innerWidth > yrate) {
-	var SCREEN_WIDTH = window.innerWidth * scale;
-	var SCREEN_HEIGHT = window.innerWidth * yrate * scale;
-} else {
-	var SCREEN_WIDTH = window.innerHeight / yrate * scale;
-	var SCREEN_HEIGHT = window.innerHeight * scale;
-}
+
+var SCREEN_WIDTH = 640;
+var SCREEN_HEIGHT = 960;
 var SCREEN_CENTER_X = SCREEN_WIDTH / 2;
 var SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;
-
-phina.display.DisplayScene.default.$extend({
-	width: SCREEN_WIDTH,
-	height: SCREEN_HEIGHT
-});
 
 //3��
 var Axis = {
@@ -1561,11 +1550,9 @@ phina.define('fly.TitleScene', {
 					{type: 'label', value: 'Click start', x: this.gridX.center(), y: this.gridY.span(11), size: 32},
 					{type: 'model', name: 'flyer', value: phina.asset.AssetManager.get('threejson', 'fighter').get(), x: 0, y: 1000, z: 0},
 					{type: 'model', value: phina.asset.AssetManager.get('threecubetex', 'skybox').get(), x: 0, y: 1000, z: 0},
-					{
-						type: 'model', value: new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({
-							map: phina.asset.AssetManager.get('threetexture', 'plane').get()
-						})), x: 0, y: 0, z: 0, init: function(model) {model.rotate(-Math.PI / 2, 0, 0);}
-					}
+					{type: 'model', value: new THREE.Mesh(new THREE.CircleGeometry(10000, 100), new THREE.MeshBasicMaterial({
+						map: phina.asset.AssetManager.get('threetexture', 'plane').get()
+					})), x: 0, y: 0, z: 0, init: function(model) {model.rotate(-Math.PI / 2, 0, 0);}}
 				]
 			},
 			main: {
@@ -2398,6 +2385,7 @@ phina.define('fly.Application', {
 			query: '#game',
 			fit: false
 		});
+		this.canvas.fitScreen(false)
 		threeext.extention();
 		this.replaceScene(fly.MainSequence());
 	},
