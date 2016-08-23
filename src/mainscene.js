@@ -267,14 +267,12 @@ phina.define('fly.MainScene', {
 							} else {
 								phina.namespace(function() {
 									var tmp = i;
-									var callfunc = function() {
+									this.one('enterframe', function() {
 										if (stage.messages[tmp].progress < this.progress) {
 											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
 											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
-											this.off('enterframe', callfunc);
 										}
-									}.bind(this);
-									this.on('enterframe', callfunc);
+									}.bind(this));
 								}.bind(this));
 							}
 						}
