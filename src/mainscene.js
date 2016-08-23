@@ -156,6 +156,7 @@ phina.define('fly.MainScene', {
 							var df = Math.sqrt(this.position.x * windManager.get(i).position.x + this.position.z * windManager.get(i).position.y);
 							if (df <= radius) {this.av.y += windManager.get(i).v / 2;}
 						}
+						// hit vs bullet
 						for (var i = 0; i < enmBulletManager.elements.length; i++) {
 							if (this.position.clone().sub(enmBulletManager.get(i).position).length() < 5 + enmBulletManager.get(i).size) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
@@ -164,6 +165,7 @@ phina.define('fly.MainScene', {
 								enmBulletManager.removeBullet(i);
 							}
 						}
+						// hit vs enemy
 						for (var i = 0; i < enemyManager.elements.length; i++) {
 							var v1 = Axis.z.clone().applyQuaternion(this.quaternion).setLength(54);
 							var v2 = Axis.z.clone().applyQuaternion(enemyManager.get(i).quaternion).setLength(enemyManager.get(i).size);
@@ -176,9 +178,11 @@ phina.define('fly.MainScene', {
 								enemyManager.kill(i);
 							}
 						}
+						// hit vs obstacle
 						for (var i = 0; i < obstacleManager.elements.length; i++) {
 							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).size, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
 						}
+						// hit vs ground
 						if (this.position.y <= 0) {this.hp = 0;}
 					},
 					sub: [
