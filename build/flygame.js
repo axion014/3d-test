@@ -1151,13 +1151,11 @@ phina.define('fly.EnemyManager', {
 	},
 	createEnemy: function(n, r, g, t, p) {
 		if(p) {
-			var callfunc = function(e) {
+			this.one('frame', function(e) {
 				if (e.progress > p) {
 					this.createEnemy(n, r, g, t);
-					this.off('frame', callfunc);
 				}
-			}.bind(this);
-			this.on('frame', callfunc);
+			}.bind(this));
 		} else if (t) {
 			this.on('frame' + (this.scene.frame + t), function() {this.createEnemy(n, r, g);}.bind(this));
 		} else {
@@ -1844,6 +1842,7 @@ phina.define('fly.MainScene', {
 							var df = Math.sqrt(this.position.x * windManager.get(i).position.x + this.position.z * windManager.get(i).position.y);
 							if (df <= radius) {this.av.y += windManager.get(i).v / 2;}
 						}
+						// hit vs bullet
 						for (var i = 0; i < enmBulletManager.elements.length; i++) {
 							if (this.position.clone().sub(enmBulletManager.get(i).position).length() < 5 + enmBulletManager.get(i).size) {
 								effectManager.explode(enmBulletManager.get(i).position, enmBulletManager.get(i).size, 10);
@@ -1852,6 +1851,7 @@ phina.define('fly.MainScene', {
 								enmBulletManager.removeBullet(i);
 							}
 						}
+						// hit vs enemy
 						for (var i = 0; i < enemyManager.elements.length; i++) {
 							var v1 = Axis.z.clone().applyQuaternion(this.quaternion).setLength(54);
 							var v2 = Axis.z.clone().applyQuaternion(enemyManager.get(i).quaternion).setLength(enemyManager.get(i).size);
@@ -1864,9 +1864,11 @@ phina.define('fly.MainScene', {
 								enemyManager.kill(i);
 							}
 						}
+						// hit vs obstacle
 						for (var i = 0; i < obstacleManager.elements.length; i++) {
 							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).size, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
 						}
+						// hit vs ground
 						if (this.position.y <= 0) {this.hp = 0;}
 					},
 					sub: [
@@ -1955,14 +1957,12 @@ phina.define('fly.MainScene', {
 							} else {
 								phina.namespace(function() {
 									var tmp = i;
-									var callfunc = function() {
+									this.one('enterframe', function() {
 										if (stage.messages[tmp].progress < this.progress) {
 											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
 											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
-											this.off('enterframe', callfunc);
 										}
-									}.bind(this);
-									this.on('enterframe', callfunc);
+									}.bind(this));
 								}.bind(this));
 							}
 						}
