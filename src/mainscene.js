@@ -594,7 +594,7 @@ phina.define('fly.MainScene', {
 								}
 								if (this.score < 0) {this.score = 0;}
 								resulttext.text = 'Score: ' + this.score.toFixed(0)
-									+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+									+ (enemyManager.allcount !== 0 ? '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)' : '')
 									+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 									+ '\nRate: ' + rate;
 								message.text = '';
