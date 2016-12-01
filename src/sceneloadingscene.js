@@ -19,14 +19,14 @@ phina.define('fly.SceneLoadingScene', {
 		var exec = function() {
 			flows = [];
 			for(var j = 0; j < params[ii].length; j++) {
-				(function() {
+				phina.namespace(function() {
 					var flow = phina.util.Flow(params[ii][j].bind(this));
 					flow.then(function() {
 						this.label.text = 'Loading... ' + ++this.loadprogress / this.loadfrequenry * 100 + '%';
 						if (this.loadprogress === this.loadfrequenry) {this.removeChild(this.label);}
 					}.bind(this));
 					flows.push(flow);
-				}.bind(this))();
+				}.bind(this));
 			}
 		}.bind(this);
 		var ii = 0;

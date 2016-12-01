@@ -761,10 +761,11 @@ phina.define('fly.SimpleUpdater', {
 		this.elements = [];
 	},
 
-	update: function() {for (var i = 0; i < this.elements.length; i++) {this.elements[i].update();}},
+	update: function() {this.each(function(element) {element.update();});},
 	get: function(i) {return this.elements[i];},
 	remove: function(i) {this.elements.splice(i, 1);},
-	count: function(i) {return this.elements.length;}
+	count: function(i) {return this.elements.length;},
+	each: function(f, t) {this.elements.each(f, t);}
 });
 
 
@@ -1080,11 +1081,11 @@ phina.define('fly.ExplodeManager', {
 	},
 
 	update: function() {
-		for (var i = 0; i < this.elements.length; i++) {
+		for (var i = 0; i < this.count(); i++) {
 			this.get(i).update();
 			if (this.get(i).time === 0) {
 				this.get(i).parent.remove(this.get(i));
-				this.elements.splice(i, 1);
+				this.remove(i);
 				i--;
 			}
 		}
@@ -1115,14 +1116,15 @@ phina.define('fly.RayManager', {
 
 	update: function() {
 		for (var i = 0; i < this.count(); i++) {
-			this.get(i).update();
-			this.get(i).move(this.get(i).generator.position.clone().add(Axis.z.clone().applyQuaternion(
-				this.get(i).generator.quaternion).setLength(this.get(i).length)));
-			this.get(i).quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
-			this.get(i).quaternion.rotate(this.get(i).generator.quaternion);
-			if (this.get(i).time === 0) {
-				this.get(i).parent.remove(this.get(i));
-				this.elements.splice(i, 1);
+			var ray = this.get(i);
+			ray.update();
+			ray.move(ray.generator.position.clone().add(Axis.z.clone().applyQuaternion(
+				ray.generator.quaternion).setLength(ray.length)));
+			ray.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
+			ray.quaternion.rotate(ray.generator.quaternion);
+			if (ray.time === 0) {
+				ray.parent.remove(ray);
+				this.remove(i);
 				i--;
 			}
 		}
@@ -1152,9 +1154,7 @@ phina.define('fly.EnemyManager', {
 	createEnemy: function(n, r, g, t, p) {
 		if(p) {
 			this.one('frame', function(e) {
-				if (e.progress > p) {
-					this.createEnemy(n, r, g, t);
-				}
+				if (e.progress > p) this.createEnemy(n, r, g, t);
 			}.bind(this));
 		} else if (t) {
 			this.on('frame' + (this.scene.frame + t), function() {this.createEnemy(n, r, g);}.bind(this));
@@ -1216,17 +1216,18 @@ phina.define('fly.EnemyManager', {
 	},
 
 	removeEnemy: function(i) {
-		this.get(i).group.num--;
-		if (this.get(i).group.num === 0) {
-			var text = this.get(i).group.message.text;
-			if (this.get(i).group.message.offkill) {this.message.text = '';}
+		var enemy = this.get(i);
+		enemy.group.num--;
+		if (enemy.group.num === 0) {
+			var text = enemy.group.message.text;
+			if (enemy.group.message.offkill) {this.message.text = '';}
 			if (text !== '') {
-				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = '';}.bind(this));
-				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text;}.bind(this));
+				this.on('frame' + (this.scene.frame + (enemy.group.message.time - 5)), function() {this.message.text = '';}.bind(this));
+				this.on('frame' + (this.scene.frame + enemy.group.message.time), function() {this.message.text = text;}.bind(this));
 			}
 		}
-		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		enemy.parent.remove(enemy);
+		this.remove(i);
 		this.enemyraders[i].remove();
 		this.enemyraders.splice(i, 1);
 	},
@@ -1335,11 +1336,11 @@ phina.define('fly.BulletManager', {
 		return bullet;
 	},
 
-	update: function() {for (var i = 0; i < this.count(); i++) {this.get(i).update();}},
+	update: function() {this.each(function(bullet) {bullet.update();});},
 
 	removeBullet: function(i) {
 		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		this.remove(i);
 	}
 });
 
@@ -1365,7 +1366,7 @@ phina.define('fly.ObstacleManager', {
 
 	removeObstacle: function(i) {
 		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		this.remove(i);
 	}
 });
 
@@ -1399,32 +1400,26 @@ phina.define('fly.WindManager', {
 	},
 
 	update: function() {
-		for (var i = 0; i < this.count(); i++) {
+		this.each(function(wind) {
 			if (this.time % 30 === 0) {
-				this.get(i).winds.push(this.get(i).mesh.clone());
-				this.get(i).winds.last.rotate(Math.PI / 2, 0, 0);
-				this.get(i).winds.last.position.y = this.flyerposy - 10000 * Math.sign(this.get(i).v);
-				this.threescene.add(this.get(i).winds.last);
+				wind.winds.push(wind.mesh.clone());
+				wind.winds.last.rotate(Math.PI / 2, 0, 0);
+				wind.winds.last.position.y = this.flyerposy - 10000 * Math.sign(wind.v);
+				this.threescene.add(wind.winds.last);
 			}
-			if (this.get(i).winds.first) {
-				if (this.get(i).winds.first.parent) {
-					if (Math.abs(this.get(i).winds.first.position.y - this.flyerposy) > 10000) {
-						this.get(i).winds.first.parent.remove(this.get(i).winds.first);
-					}
-				}
+			if (wind.winds.first && wind.winds.first.parent && Math.abs(wind.winds.first.position.y - this.flyerposy) > 10000) {
+				wind.winds.first.parent.remove(wind.winds.first);
 			}
-			for (var j = 0; j < this.get(i).winds.length; j++) {
-				this.get(i).winds[j].position.y += this.get(i).v * 10;
+			for (var i = 0; i < wind.winds.length; i++) {
+				wind.winds[i].position.y += wind.v * 10;
 			}
-		}
+		});
 		this.time++;
 	},
 
 	removeWind: function(i) {
-		for (var j = 0; j < this.get(i).winds.length; j++) {
-			this.get(i).winds[j].parent.remove(this.get(i).winds[j]);
-		}
-		this.elements.splice(i, 1);
+		this.get(i).winds.each(function(wind) {wind.parent.remove(wind);});
+		this.remove(i);
 	}
 });
 
@@ -1486,14 +1481,14 @@ phina.define('fly.SceneLoadingScene', {
 		var exec = function() {
 			flows = [];
 			for(var j = 0; j < params[ii].length; j++) {
-				(function() {
+				phina.namespace(function() {
 					var flow = phina.util.Flow(params[ii][j].bind(this));
 					flow.then(function() {
 						this.label.text = 'Loading... ' + ++this.loadprogress / this.loadfrequenry * 100 + '%';
 						if (this.loadprogress === this.loadfrequenry) {this.removeChild(this.label);}
 					}.bind(this));
 					flows.push(flow);
-				}.bind(this))();
+				}.bind(this));
 			}
 		}.bind(this);
 		var ii = 0;
@@ -1609,6 +1604,7 @@ phina.define('fly.TitleScene', {
 			}
 		}
 
+console.log(phina);
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		threelayer.setOrigin(0, 0);
@@ -1837,11 +1833,10 @@ phina.define('fly.MainScene', {
 						if (this.e < 2000) {this.e += 4;}
 						gauge_h.value = this.hp;
 
-						for (var i = 0; i < windManager.elements.length; i++) {
-							var radius = 15 + windManager.get(i).size;
-							var df = Math.sqrt(this.position.x * windManager.get(i).position.x + this.position.z * windManager.get(i).position.y);
-							if (df <= radius) {this.av.y += windManager.get(i).v / 2;}
-						}
+						windManager.each(function(wind) {
+							var radius = 15 + wind.size;
+							if (Math.sqrt(this.position.x * wind.position.x + this.position.z * wind.position.y) <= radius) this.av.y += wind.v / 2;
+						}, this);
 						// hit vs bullet
 						for (var i = 0; i < enmBulletManager.elements.length; i++) {
 							if (this.position.clone().sub(enmBulletManager.get(i).position).length() < 5 + enmBulletManager.get(i).size) {
@@ -1865,11 +1860,11 @@ phina.define('fly.MainScene', {
 							}
 						}
 						// hit vs obstacle
-						for (var i = 0; i < obstacleManager.elements.length; i++) {
-							if (fly.colobbsphere(obstacleManager.get(i).position, this.position, obstacleManager.get(i).size, obstacleManager.get(i).quaternion, 15)) {this.hp = 0;}
-						}
+						obstacleManager.each(function(obstacle) {
+							if (fly.colobbsphere(obstacle.position, this.position, obstacle.size, obstacle.quaternion, 15)) this.hp = 0;
+						}, this);
 						// hit vs ground
-						if (this.position.y <= 0) {this.hp = 0;}
+						if (this.position.y <= 0) this.hp = 0;
 					},
 					sub: [
 						function() {
@@ -1935,38 +1930,36 @@ phina.define('fly.MainScene', {
 					var load = function() {
 						var stage = phina.asset.AssetManager.get('stage', this.stage).get();
 						name.label.text = stage.name;
-						for(var i = 0; i < stage.enemys.length; i++) {
-							if (!enemyManager.definedenemy[stage.enemys[i].name]) {
-								enemyManager.defineEnemy(stage.enemys[i].name);
-							}
-							enemyManager.createEnemyMulti(stage.enemys[i].name, stage.enemys[i].option, stage.enemys[i].autospawn, stage.enemys[i].killmes);
-						}
-						for(var i = 0; i < stage.obstacles.length; i++) {
-							obstacleManager.createObstacle(stage.obstacles[i].position, stage.obstacles[i].quaternion, stage.obstacles[i].scale);
-						}
-						for(var i = 0; i < stage.winds.length; i++) {
-							windManager.createWind({v: stage.winds[i].v, position: stage.winds[i].position, size: stage.winds[i].size}, stage.winds[i].color);
-						}
-						for(var i = 0; i < stage.messages.length; i++) {
-							if (!stage.messages[i].progress || stage.messages[i].progress < 0.00001) {
+						stage.enemys.each(function(enemy) {
+							if (!enemyManager.definedenemy[enemy.name]) enemyManager.defineEnemy(enemy.name);
+							enemyManager.createEnemyMulti(enemy.name, enemy.option, enemy.autospawn, enemy.killmes);
+						});
+						stage.obstacles.each(function(obstacle) {
+							obstacleManager.createObstacle(obstacle.position, obstacle.quaternion, obstacle.scale);
+						});
+						stage.winds.each(function(wind) {
+							windManager.createWind({v: wind.v, position: wind.position, size: wind.size}, wind.color);
+						});
+						stage.messages.each(function(imessage) {
+							if (!imessage.progress || imessage.progress < 0.00001) {
 								phina.namespace(function() {
-									var tmp = i;
-									this.on('frame' + (stage.messages[i].time - 5), function() {message.text = '';}.bind(this));
-									this.on('frame' + stage.messages[i].time, function() {message.text = stage.messages[tmp].text;}.bind(this));
-								}.bind(this));
+									var tmp = imessage;
+									this.on('frame' + (imessage.time - 5), function() {message.text = '';});
+									this.on('frame' + imessage.time, function() {message.text = tmp.text;});
+								});
 							} else {
 								phina.namespace(function() {
-									var tmp = i;
+									var tmp = imessage;
 									this.one('enterframe', function() {
-										if (stage.messages[tmp].progress < this.progress) {
-											this.on('frame' + (this.frame + stage.messages[tmp].time - 5), function() {message.text = '';}.bind(this));
-											this.on('frame' + (this.frame + stage.messages[tmp].time), function() {message.text = stage.messages[tmp].text;}.bind(this));
+										if (tmp.progress < this.progress) {
+											this.on('frame' + (this.frame + tmp.time - 5), function() {message.text = '';});
+											this.on('frame' + (this.frame + tmp.time), function() {message.text = tmp.text;});
 										}
 									}.bind(this));
 								}.bind(this));
 							}
-						}
-						for(var i = 0; i < stage.goals.length; i++) {
+						}, this);
+						stage.goals.each(function(goal) {
 							phina.namespace(function() {
 								var material = new THREE.ShaderMaterial({
 									transparent: true,
@@ -1978,8 +1971,8 @@ phina.define('fly.MainScene', {
 									vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').data,
 									fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').data
 								});
-								goals[i] = new THREE.Mesh(new THREE.IcosahedronGeometry(stage.goals[i].size, 2), material).$safe({
-									size: stage.goals[i].size, kill: stage.goals[i].kill, message: stage.goals[i].message, enable: false,
+								goals[i] = new THREE.Mesh(new THREE.IcosahedronGeometry(goal.size, 2), material).$safe({
+									size: goal.size, kill: goal.kill, message: goal.message, enable: false,
 									update: function(s) {
 										material.uniforms.time.value += 0.005 * Math.random();
 										if (!this.enable) {
@@ -1992,7 +1985,7 @@ phina.define('fly.MainScene', {
 									}
 								});
 								material.uniforms.tex1_percentage.tweener.setUpdateType('fps');
-								goals[i].move(new THREE.Vector3(stage.goals[i].x, stage.goals[i].y, stage.goals[i].z));
+								goals[i].move(new THREE.Vector3(goal.x, goal.y, goal.z));
 								var xdist = flyer.position.x / 15 - goals[i].position.x / 15;
 								var zdist = flyer.position.z / 15 - goals[i].position.z / 15;
 								var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
@@ -2000,7 +1993,7 @@ phina.define('fly.MainScene', {
 								goalraders[i] = phina.display.CircleShape({radius: 5, fill: 'hsla(0, 0%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
 									.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
 							}.bind(this));
-						}
+						}, this);
 						this.rate = stage.rate;
 						this.space = stage.space;
 						resolve();
@@ -2013,11 +2006,11 @@ phina.define('fly.MainScene', {
 							var stage = phina.asset.AssetManager.get('stage', this.stage).get();
 							asset = {threejson: {}};
 							if (stage.enemys.length !== 0) {
-								for(var i = 0; i < stage.enemys.length; i++) {
-									if (!phina.asset.AssetManager.get('threejson', stage.enemys[i].name)) {
-										asset.threejson[stage.enemys[i].name] = 'data/models/' + enemyManager.enemys[stage.enemys[i].name].filename + '.min.json';
+								stage.enemys.each(function(enemy) {
+									if (!phina.asset.AssetManager.get('threejson', enemy.name)) {
+										asset.threejson[enemy.name] = 'data/models/' + enemyManager.enemys[enemy.name].filename + '.min.json';
 									}
-								}
+								});
 								loader.onload = load;
 								loader.load(asset);
 							} else {
@@ -2283,7 +2276,7 @@ phina.define('fly.MainScene', {
 								}
 								if (this.score < 0) {this.score = 0;}
 								resulttext.text = 'Score: ' + this.score.toFixed(0)
-									+ '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)'
+									+ (enemyManager.allcount !== 0 ? '\nKill: ' + enemyManager.killcount + '(' + (enemyManager.killcount / enemyManager.allcount * 100).toFixed(1) + '%)' : '')
 									+ '\nLife: ' + (flyer.hp / 10).toFixed(1) + '%'
 									+ '\nRate: ' + rate;
 								message.text = '';

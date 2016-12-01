@@ -20,10 +20,10 @@ phina.define('fly.BulletManager', {
 		return bullet;
 	},
 
-	update: function() {for (var i = 0; i < this.count(); i++) {this.get(i).update();}},
+	update: function() {this.each(function(bullet) {bullet.update();});},
 
 	removeBullet: function(i) {
 		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		this.remove(i);
 	}
 });

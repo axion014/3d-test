@@ -21,9 +21,7 @@ phina.define('fly.EnemyManager', {
 	createEnemy: function(n, r, g, t, p) {
 		if(p) {
 			this.one('frame', function(e) {
-				if (e.progress > p) {
-					this.createEnemy(n, r, g, t);
-				}
+				if (e.progress > p) this.createEnemy(n, r, g, t);
 			}.bind(this));
 		} else if (t) {
 			this.on('frame' + (this.scene.frame + t), function() {this.createEnemy(n, r, g);}.bind(this));
@@ -85,17 +83,18 @@ phina.define('fly.EnemyManager', {
 	},
 
 	removeEnemy: function(i) {
-		this.get(i).group.num--;
-		if (this.get(i).group.num === 0) {
-			var text = this.get(i).group.message.text;
-			if (this.get(i).group.message.offkill) {this.message.text = '';}
+		var enemy = this.get(i);
+		enemy.group.num--;
+		if (enemy.group.num === 0) {
+			var text = enemy.group.message.text;
+			if (enemy.group.message.offkill) {this.message.text = '';}
 			if (text !== '') {
-				this.on('frame' + (this.scene.frame + (this.get(i).group.message.time - 5)), function() {this.message.text = '';}.bind(this));
-				this.on('frame' + (this.scene.frame + this.get(i).group.message.time), function() {this.message.text = text;}.bind(this));
+				this.on('frame' + (this.scene.frame + (enemy.group.message.time - 5)), function() {this.message.text = '';}.bind(this));
+				this.on('frame' + (this.scene.frame + enemy.group.message.time), function() {this.message.text = text;}.bind(this));
 			}
 		}
-		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		enemy.parent.remove(enemy);
+		this.remove(i);
 		this.enemyraders[i].remove();
 		this.enemyraders.splice(i, 1);
 	},

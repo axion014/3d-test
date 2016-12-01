@@ -28,31 +28,25 @@ phina.define('fly.WindManager', {
 	},
 
 	update: function() {
-		for (var i = 0; i < this.count(); i++) {
+		this.each(function(wind) {
 			if (this.time % 30 === 0) {
-				this.get(i).winds.push(this.get(i).mesh.clone());
-				this.get(i).winds.last.rotate(Math.PI / 2, 0, 0);
-				this.get(i).winds.last.position.y = this.flyerposy - 10000 * Math.sign(this.get(i).v);
-				this.threescene.add(this.get(i).winds.last);
+				wind.winds.push(wind.mesh.clone());
+				wind.winds.last.rotate(Math.PI / 2, 0, 0);
+				wind.winds.last.position.y = this.flyerposy - 10000 * Math.sign(wind.v);
+				this.threescene.add(wind.winds.last);
 			}
-			if (this.get(i).winds.first) {
-				if (this.get(i).winds.first.parent) {
-					if (Math.abs(this.get(i).winds.first.position.y - this.flyerposy) > 10000) {
-						this.get(i).winds.first.parent.remove(this.get(i).winds.first);
-					}
-				}
+			if (wind.winds.first && wind.winds.first.parent && Math.abs(wind.winds.first.position.y - this.flyerposy) > 10000) {
+				wind.winds.first.parent.remove(wind.winds.first);
 			}
-			for (var j = 0; j < this.get(i).winds.length; j++) {
-				this.get(i).winds[j].position.y += this.get(i).v * 10;
+			for (var i = 0; i < wind.winds.length; i++) {
+				wind.winds[i].position.y += wind.v * 10;
 			}
-		}
+		});
 		this.time++;
 	},
 
 	removeWind: function(i) {
-		for (var j = 0; j < this.get(i).winds.length; j++) {
-			this.get(i).winds[j].parent.remove(this.get(i).winds[j]);
-		}
-		this.elements.splice(i, 1);
+		this.get(i).winds.each(function(wind) {wind.parent.remove(wind);});
+		this.remove(i);
 	}
 });

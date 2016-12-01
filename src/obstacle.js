@@ -20,6 +20,6 @@ phina.define('fly.ObstacleManager', {
 
 	removeObstacle: function(i) {
 		this.get(i).parent.remove(this.get(i));
-		this.elements.splice(i, 1);
+		this.remove(i);
 	}
 });

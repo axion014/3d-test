@@ -101,6 +101,7 @@ phina.define('fly.TitleScene', {
 			}
 		}
 
+console.log(phina);
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		threelayer.setOrigin(0, 0);

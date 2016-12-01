@@ -48,11 +48,11 @@ phina.define('fly.ExplodeManager', {
 	},
 
 	update: function() {
-		for (var i = 0; i < this.elements.length; i++) {
+		for (var i = 0; i < this.count(); i++) {
 			this.get(i).update();
 			if (this.get(i).time === 0) {
 				this.get(i).parent.remove(this.get(i));
-				this.elements.splice(i, 1);
+				this.remove(i);
 				i--;
 			}
 		}
@@ -83,14 +83,15 @@ phina.define('fly.RayManager', {
 
 	update: function() {
 		for (var i = 0; i < this.count(); i++) {
-			this.get(i).update();
-			this.get(i).move(this.get(i).generator.position.clone().add(Axis.z.clone().applyQuaternion(
-				this.get(i).generator.quaternion).setLength(this.get(i).length)));
-			this.get(i).quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
-			this.get(i).quaternion.rotate(this.get(i).generator.quaternion);
-			if (this.get(i).time === 0) {
-				this.get(i).parent.remove(this.get(i));
-				this.elements.splice(i, 1);
+			var ray = this.get(i);
+			ray.update();
+			ray.move(ray.generator.position.clone().add(Axis.z.clone().applyQuaternion(
+				ray.generator.quaternion).setLength(ray.length)));
+			ray.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Axis.x, Math.PI / 2));
+			ray.quaternion.rotate(ray.generator.quaternion);
+			if (ray.time === 0) {
+				ray.parent.remove(ray);
+				this.remove(i);
 				i--;
 			}
 		}
