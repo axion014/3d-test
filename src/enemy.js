@@ -20,9 +20,13 @@ phina.define('fly.EnemyManager', {
 	},
 	createEnemy: function(n, r, g, t, p) {
 		if(p) {
-			this.one('frame', function(e) {
-				if (e.progress > p) this.createEnemy(n, r, g, t);
-			}.bind(this));
+			var func = function(e) {
+				if (e.progress > p) {
+					this.createEnemy(n, r, g, t);
+					this.off('frame', func)
+				}
+			}
+			this.on('frame', func, this);
 		} else if (t) {
 			this.on('frame' + (this.scene.frame + t), function() {this.createEnemy(n, r, g);}.bind(this));
 		} else {

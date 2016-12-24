@@ -264,16 +264,18 @@ phina.define('fly.MainScene', {
 									var tmp = imessage;
 									this.on('frame' + (imessage.time - 5), function() {message.text = '';});
 									this.on('frame' + imessage.time, function() {message.text = tmp.text;});
-								});
+								}.bind(this));
 							} else {
 								phina.namespace(function() {
 									var tmp = imessage;
-									this.one('enterframe', function() {
+									var func = function() {
 										if (tmp.progress < this.progress) {
 											this.on('frame' + (this.frame + tmp.time - 5), function() {message.text = '';});
 											this.on('frame' + (this.frame + tmp.time), function() {message.text = tmp.text;});
+											this.off('enterframe', func);
 										}
-									}.bind(this));
+									}
+									this.on('enterframe', func, this);
 								}.bind(this));
 							}
 						}, this);
@@ -289,7 +291,7 @@ phina.define('fly.MainScene', {
 									vertexShader: phina.asset.AssetManager.get('text', 'goalvertexshader').data,
 									fragmentShader: phina.asset.AssetManager.get('text', 'goalfragshader').data
 								});
-								goals[i] = new THREE.Mesh(new THREE.IcosahedronGeometry(goal.size, 2), material).$safe({
+								goals.push(new THREE.Mesh(new THREE.IcosahedronGeometry(goal.size, 2), material).$safe({
 									size: goal.size, kill: goal.kill, message: goal.message, enable: false,
 									update: function(s) {
 										material.uniforms.time.value += 0.005 * Math.random();
@@ -301,15 +303,15 @@ phina.define('fly.MainScene', {
 											}
 										}
 									}
-								});
+								}));
 								material.uniforms.tex1_percentage.tweener.setUpdateType('fps');
-								goals[i].move(new THREE.Vector3(goal.x, goal.y, goal.z));
-								var xdist = flyer.position.x / 15 - goals[i].position.x / 15;
-								var zdist = flyer.position.z / 15 - goals[i].position.z / 15;
+								goals.last.move(new THREE.Vector3(goal.x, goal.y, goal.z));
+								var xdist = flyer.position.x / 15 - goals.last.position.x / 15;
+								var zdist = flyer.position.z / 15 - goals.last.position.z / 15;
 								var distance = Math.min(Math.sqrt(Math.pow(xdist, 2) + Math.pow(zdist, 2)), 75);
 								var angle = Math.atan2(xdist, zdist) - flyer.myrot.y + (Math.abs(flyer.myrot.x) > Math.PI / 2 && Math.abs(flyer.myrot.x) < Math.PI * 1.5 ? Math.PI : 0);
-								goalraders[i] = phina.display.CircleShape({radius: 5, fill: 'hsla(0, 0%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
-									.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance);
+								goalraders.push(phina.display.CircleShape({radius: 5, fill: 'hsla(0, 0%, 70%, 0.5)', stroke: 'hsla(0, 0%, 0%, 0.5)', strokeWidth: 1})
+									.setPosition(SCREEN_WIDTH - 100 + Math.sin(angle) * distance, SCREEN_HEIGHT - 100 + Math.cos(angle) * distance));
 							}.bind(this));
 						}, this);
 						this.rate = stage.rate;
@@ -404,7 +406,7 @@ phina.define('fly.MainScene', {
 				gauge_e.addChildTo(layer);
 				gauge_e.animation = false;
 				if (this.stage !== 'arcade') {
-					for(var i = 0; i < goalraders.length; i++) {goalraders[i].addChildTo(layer)};
+					for(var i = 0; i < goalraders.length; i++) goalraders[i].addChildTo(layer);
 					gauge_boss_h.addChildTo(layer);
 					gauge_boss_h.tweener.setUpdateType('fps');
 					gauge_boss_h.alpha = 0;

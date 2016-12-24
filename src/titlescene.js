@@ -101,7 +101,6 @@ phina.define('fly.TitleScene', {
 			}
 		}
 
-console.log(phina);
 		var layer = phina.glfilter.GLFilterLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		var threelayer = phina.display.ThreeLayer({width: SCREEN_WIDTH, height: SCREEN_HEIGHT});
 		threelayer.setOrigin(0, 0);
@@ -145,20 +144,18 @@ console.log(phina);
 							label.on('pointstart', function() {
 								moveTo(menu[link].x, menu[link].y);
 								if (link === 'title') {
-									var waitFrame = function() {
-										this.on('pointstart', moveToMain);
-										this.off('enterframe', waitFrame)
-									}.bind(this);
-									this.on('enterframe', waitFrame);
+									this.one('enterframe', function() {
+										this.one('pointstart', moveToMain);
+									}, this);
 								}
-							}.bind(this));
+							}, this);
 						}.bind(this));
 					}
 					if (selects.callback) {
 						label.setInteractive(true);
 						phina.namespace(function() {
 							var callback = selects.callback;
-							label.on('pointstart', function() {callback();});
+							label.on('pointstart', callback);
 						});
 					}
 				} else if (selects.type === 'model') {
@@ -169,10 +166,7 @@ console.log(phina);
 				}
 			}
 		}.bind(this));
-		var moveToMain = function() {
-			moveTo(-500, -500);
-			this.off('pointstart', moveToMain);
-		}
-		this.on('pointstart', moveToMain);
+		var moveToMain = moveTo.bind(undefined, -500, -500);
+		this.one('pointstart', moveToMain);
 	}
 });
