@@ -321,6 +321,940 @@
 
 
 /*
+ * array.js
+ */
+
+;(function() {
+
+  /**
+   * @class global.Array
+   * # 拡張した Array クラス
+   * Array クラスを拡張しています。
+   */
+
+
+  /**
+   * @property {Object} first
+   * 最初の要素
+   *
+   * ### Example
+   *     arr = [6, 5, 2, 3, 1, 4];
+   *     arr.first; // => 6
+   */
+  Array.prototype.accessor("first", {
+      "get": function()   { return this[0]; },
+      "set": function(v)  { this[0] = v; }
+  });
+  
+  /**
+   * @property {Object} last
+   * 最後の要素
+   *
+   * ### Example
+   *     arr = [6, 5, 2, 3, 1, 4];
+   *     arr.last; // => 4
+   */
+  Array.prototype.accessor("last", {
+    "get": function()   { return this[this.length-1]; },
+    "set": function(v)  { this[this.length-1] = v; }
+  });
+
+  /**
+   * @method equals
+   * 渡された配列と等しいかどうかをチェックします。
+   *
+   * 要素同士を === で比較します。要素に配列が含まれている場合は {@link #deepEquals} を使用してください。
+   *
+   * ### Example
+   *     arr1 = [6, 5, 2, 3, 1, 4];
+   *     arr1.equals([6, 5, 2, 3, 1, 4]);       // => true
+   *     arr2 = [6, 5, 2, [3, 1], 4];
+   *     arr2.equals([6, 5, 2, [3, 1], 4]);     // => false
+   *     arr2.deepEquals([6, 5, 2, [3, 1], 4]); // => true
+   *
+   * @param {Array} arr 比較する対象の配列
+   * @return {Boolean} チェックの結果
+   */
+  Array.prototype.$method("equals", function(arr) {
+    // 長さチェック
+    if (this.length !== arr.length) return false;
+    
+    for (var i=0,len=this.length; i<len; ++i) {
+      if (this[i] !== arr[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  /**
+   * @method deepEquals
+   * ネストされている配列を含め、渡された配列と等しいかどうかをチェックします。
+   *
+   * ※equalsDeep にするか検討. (Java では deepEquals なのでとりあえず合わせとく)
+   *
+   * ### Example
+   *     arr = [6, 5, 2, [3, 1], 4];
+   *     arr.equals([6, 5, 2, [3, 1], 4]);     // => false
+   *     arr.deepEquals([6, 5, 2, [3, 1], 4]); // => true
+   *
+   * @param {Array} arr 比較する対象の配列
+   * @return {Boolean} チェックの結果
+   */
+  Array.prototype.$method("deepEquals", function(arr) {
+    // 長さチェック
+    if (this.length !== arr.length) return false;
+    
+    for (var i=0,len=this.length; i<len; ++i) {
+      var result = (this[i].deepEquals) ? this[i].deepEquals(arr[i]) : (this[i] === arr[i]);
+      if (result === false) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  /**
+   * @method contains
+   * 指定した要素が配列に含まれているかをチェックします。
+   *
+   * 比較には厳密な同値（三重イコール演算子 === で使われるのと同じ方法）を用います。
+   *
+   * ### Example
+   *     arr = [6, 5, 2, 3, 1, 4];
+   *     arr.contains(3);     // => true
+   *     arr.contains(3, 4);  // => false
+   *     arr.contains(3, -4); // => true
+   *     arr.contains("6");   // => false
+   *
+   * @param {Object} item チェックするオブジェクト
+   * @param {Number} [fromIndex=0] 検索を始める位置。負数を指定した場合は末尾からのオフセットと見なします。
+   * @return {Boolean} チェックの結果
+   */
+  Array.prototype.$method("contains", function(item, fromIndex) {
+    return this.indexOf(item, fromIndex) != -1;
+  });
+  
+  /**
+   * @method at
+   * 指定したインデックスの要素を返します（ループ・負数の指定可）。
+   *
+   * 添字が負数の場合は末尾からのオフセットとみなします。末尾の要素が -1 番目になります。  
+   * 添字の絶対値が Array.length 以上の場合はループします。
+   *
+   * ### Example
+   *     arr = ['a', 'b', 'c', 'd', 'e', 'f'];
+   *     arr.at(0);  // => 'a'
+   *     arr.at(6);  // => 'a'
+   *     arr.at(13); // => 'b'
+   *     arr.at(-1); // => 'f'
+   *     arr.at(-8); // => 'e'
+   *
+   * @param {Number} index 添字
+   * @return {Object} 添字で指定された要素
+   */
+  Array.prototype.$method("at", function(i) {
+    i%=this.length;
+    i+=this.length;
+    i%=this.length;
+    return this[i];
+  });
+
+
+  /**
+   * @method find
+   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初の要素を返します。
+   *
+   * どの要素もマッチしなければ undefined を返します。
+   *
+   * ### Example
+   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
+   *     arr.find( function(elm) {
+   *       return elm.indexOf('a') >= 0;
+   *     });
+   *     // => 'bar'
+   *
+   * @param {Function} callback 各要素に対して実行するコールバック関数
+   * @param {Object} [self=this] callback 内で this として参照される値。デフォルトは呼び出し時の this。
+   * @return {Object} 条件にマッチした最初の要素、または undefined
+   */
+  Array.prototype.$method("find", function(fn, self) {
+    var target = null;
+
+    this.some(function(elm, i) {
+      if (fn.call(self, elm, i, this)) {
+        target = elm;
+        return true;
+      }
+    });
+
+    return target;
+  });
+
+  /**
+   * @method findIndex
+   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初のインデックスを返します。
+   *
+   * どの要素もマッチしなければ -1 を返します。
+   *
+   * ### Example
+   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
+   *     arr.findIndex( function(elm) {
+   *       return elm.indexOf('a') >= 0;
+   *     });
+   *     // => 1
+   *
+   * @param {Function} callback 各要素に対して実行するコールバック関数
+   * @param {Object} [self=this] callback 内で this として参照される値。デフォルトは呼び出し時の this。
+   * @return {Object} 条件にマッチした最初のインデックス、または -1
+   */
+  Array.prototype.$method("findIndex", function(fn, self) {
+    var target = null;
+
+    this.some(function(elm, i) {
+      if (fn.call(self, elm, i, this)) {
+        target = i;
+        return true;
+      }
+    });
+
+    return target;
+  });
+  
+  /**
+   * @method swap
+   * @chainable
+   * a 番目の要素 と b 番目の要素を入れ替えます。
+   *
+   * ### Example
+   *     arr1 = ['a', 'b', 'c', 'd'];
+   *     arr2 = arr1.swap(0, 3); // => ['d', 'b', 'c', 'a']
+   *     arr1 === arr2;          // => true
+   *
+   * @param {Number} a  インデックス
+   * @param {Number} b  インデックス
+   */
+  Array.prototype.$method("swap", function(a, b) {
+    var temp = this[a];
+    this[a] = this[b];
+    this[b] = temp;
+    
+    return this;
+  });
+
+  /**
+   * @method erase
+   * @chainable
+   * 指定したオブジェクトと一致した最初の要素を削除します。
+   *
+   * ### Example
+   *     arr1 = ['a', 'b', 'b', 'c'];
+   *     arr2 = arr1.erase('b'); // => ['a', 'b', 'c']
+   *     arr1 === arr2;          // => true
+   *
+   * @param {Object} elm 削除したいオブジェクト
+   */
+  Array.prototype.$method("erase", function(elm) {
+    var index  = this.indexOf(elm);
+    if (index >= 0) {
+      this.splice(index, 1);
+    }
+    return this;
+  });
+  
+  /**
+   * @method eraseAll
+   * @chainable
+   * 指定したオブジェクトと一致したすべての要素を削除します。
+   *
+   * ### Example
+   *     arr1 = ['a', 'b', 'b', 'c'];
+   *     arr2 = arr1.eraseAll('b'); // => ['a', 'c']
+   *     arr1 === arr2;             // => true
+   *
+   * @param {Object} elm 削除したいオブジェクト
+   */
+  Array.prototype.$method("eraseAll", function(elm) {
+    for (var i=0,len=this.length; i<len; ++i) {
+      if (this[i] == elm) {
+        this.splice(i--, 1);
+      }
+    }
+    return this;
+  });
+  
+  /**
+   * @method eraseIf
+   * @chainable
+   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初の要素を削除します。
+   *
+   * どの要素もマッチしなければ何も起きません。
+   *
+   * ### Example
+   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
+   *     arr.eraseIf( function(elm) {
+   *       return elm.indexOf('o') >= 0;
+   *     });
+   *     // => ['bar', 'hoge', 'fuga']
+   *
+   * @param {Function} callback 各要素に対して実行するコールバック関数
+   */
+  Array.prototype.$method("eraseIf", function(fn) {
+    for (var i=0,len=this.length; i<len; ++i) {
+      if ( fn(this[i], i, this) ) {
+        this.splice(i, 1);
+        break;
+      }
+    }
+    return this;
+  });
+  
+  /**
+   * @method eraseIfAll
+   * @chainable
+   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）すべての要素を削除します。
+   *
+   * どの要素もマッチしなければ何も起きません。
+   *
+   * ### Example
+   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
+   *     arr.eraseIfAll( function(elm) {
+   *       return elm.indexOf('o') >= 0;
+   *     });
+   *     // => ['bar', 'fuga']
+   *
+   * @param {Function} callback 各要素に対して実行するコールバック関数
+   */
+  Array.prototype.$method("eraseIfAll", function(fn) {
+    for (var i=0,len=this.length; i<len; ++i) {
+      if ( fn(this[i], i, this) ) {
+        this.splice(i--, 1);
+        len--;
+      }
+    }
+    return this;
+  });
+  
+  /**
+   * @method random
+   * 配列からランダムに1つ取り出した要素を返します。
+   *
+   * 取り出す範囲をインデックスで指定することもできます。  
+   * {@link #pickup}、{@link #lot} と同じです。  
+   *
+   * ### Example
+   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
+   *     arr.random(2, 3);  // => 'hoge' または 'fuga'
+   *
+   * @param {Number} [min=0] インデックスの下限
+   * @param {Number} [max=配列の最大インデックス] インデックスの上限
+   * @return {Object} ランダムに1つ取り出した要素
+   */
+  Array.prototype.$method("random", function(min, max) {
+    min = min || 0;
+    max = max || this.length-1;
+    return this[ Math.randint(min, max) ];
+  });
+  
+  /**
+   * @method pickup
+   * 配列からランダムで1つ取り出した要素を返します。
+   *
+   * {@link #random}、{@link #lot} と同じです。
+   * @inheritdoc #random
+   */
+  Array.prototype.$method("pickup", function(min, max) {
+    min = min || 0;
+    max = max || this.length-1;
+    return this[ Math.randint(min, max) ];
+  });
+  
+  /**
+   * @method lot
+   * 配列からランダムで1つ取り出した要素を返します。
+   *
+   * {@link #random}、{@link #pickup} と同じです。
+   * @inheritdoc #random
+   */
+  Array.prototype.$method("lot", function(min, max) {
+    min = min || 0;
+    max = max || this.length-1;
+    return this[ Math.randint(min, max) ];
+  });
+  
+  /**
+   * @method uniq
+   * 要素の重複を取り除いた配列を生成して返します。
+   *
+   * 自分自身は破壊されません。
+   *
+   * ### Example
+   *     arr = [1, 2, 3, 4, 3, 2];
+   *     arr.uniq(); // => [1, 2, 3, 4]
+   *
+   * @param {Number} [deep] ※未使用
+   * @return {Object} 新しい配列
+   */
+  Array.prototype.$method("uniq", function(deep) {
+    return this.filter(function(value, index, self) {
+      return self.indexOf(value) === index;
+    });
+  });
+  
+
+  /**
+   * @method flatten
+   * 自身を再帰的に平滑化した配列を生成して返します。
+   *
+   * level を指定しなければ深さの際限なく完全に平滑化します。
+   *
+   * ### Example
+   *     arr = [1, 2, [3, [4, 5]]];
+   *     arr.flatten();  // => [1, 2, 3, 4, 5]
+   *     arr.flatten(1); // => [1, 2, 3, [4, 5]]
+   *
+   * @param {Number} [level=0]  平滑化の再帰の深さ
+   * @return {Object} 平滑化した配列
+   */
+  Array.prototype.$method("flatten", function(level) {
+    var arr = null;
+
+    if (level) {
+      arr = this;
+      for (var i=0; i<level; ++i) {
+        arr = Array.prototype.concat.apply([], arr);
+      }
+    }
+    else {
+      // 完全フラット
+      arr = this.reduce(function (previousValue, curentValue) {
+        return Array.isArray(curentValue) ?
+          previousValue.concat(curentValue.flatten()) : previousValue.concat(curentValue);
+      }, []);
+    }
+
+    return arr;
+  });
+
+  /**
+   * @method clone
+   * 自身のコピーを生成して返します。
+   *
+   * ### Example
+   *     arr1 = [1, 2, [3, 4]];
+   *     arr2 = arr1.clone();      // => [1, 2, [3, 4]]
+   *     arr1[2] === arr2[2];      // => true
+   *     arr1[2][0] = 9;
+   *     arr2;                     // => [1, 2, [9, 4]]
+   *     arr1 = [1, 2, [3, 4]];
+   *     arr2 = arr1.clone(true);  // => [1, 2, [3, 4]]
+   *     arr1[2] === arr2[2];      // => false
+   *     arr1[2][0] = 9;
+   *     arr2;                     // => [1, 2, [3, 4]]
+   *
+   * @param {Boolean} [deep=false] 配列のネストをたどって複製するかどうか
+   * @return {Object} 新しい配列
+   */
+  Array.prototype.$method("clone", function(deep) {
+    if (deep === true) {
+      var a = Array(this.length);
+      for (var i=0,len=this.length; i<len; ++i) {
+        a[i] = (this[i].clone) ? this[i].clone(deep) : this[i];
+      }
+      return a;
+    }
+    else {
+      return Array.prototype.slice.apply(this);
+    }
+  });
+
+
+  /**
+   * @method clear
+   * @chainable
+   * 自身を空の配列にします。
+   *
+   * ### Example
+   *     arr = [1, 2, [3, 4]];
+   *     arr.clear(); // => []
+   */
+  Array.prototype.$method("clear", function() {
+    this.length = 0;
+    return this;
+  });
+  
+  /**
+   * @method fill
+   * @chainable
+   * 自身の一部の要素を特定の値で埋めます。
+   *
+   * ### Example
+   *     arr = [1, 2, 3, 4, 5];
+   *     arr.fill("x");       // => ["x", "x", "x", "x", "x"]
+   *     arr.fill("x", 2, 4); // => [1, 2, "x", "x", 5]
+   *
+   * @param {Object} value 埋める値
+   * @param {Number} [start=0] 値を埋める最初のインデックス
+   * @param {Number} [end=自身の配列の長さ] 値を埋める最後のインデックス+1
+   */
+  Array.prototype.$method("fill", function(value, start, end) {
+    start = start || 0;
+    end   = end   || (this.length);
+    
+    for (var i=start; i<end; ++i) {
+      this[i] = value;
+    }
+    
+    return this;
+  });
+  
+
+  /**
+   * @method range
+   * @chainable
+   * 自身を等差数列（一定間隔の整数値の列）とします。
+   *
+   * - 引数が1つの場合、0～end（end含まず）の整数の配列です。  
+   * - 引数が2つの場合、start～end（end含まず）の整数の配列です。  
+   * - 引数が3つの場合、start～end（end含まず）かつ start + n * step (nは整数)を満たす整数の配列です。
+   *
+   * ### Example
+   *     arr = [];
+   *     arr.range(4);        // => [0, 1, 2, 3]
+   *     arr.range(2, 5);     // => [2, 3, 4]
+   *     arr.range(2, 14, 5); // => [2, 7, 12]
+   *     arr.range(2, -3);    // => [2, 1, 0, -1, -2]
+   *
+   * @param {Number} start 最初の値（デフォルトは 0）
+   * @param {Number} end 最後の値（省略不可）
+   * @param {Number} [step=1または-1] 間隔
+   */
+  Array.prototype.$method("range", function(start, end, step) {
+    this.clear();
+    
+    if (arguments.length == 1) {
+      for (var i=0; i<start; ++i) this[i] = i;
+    }
+    else if (start < end) {
+      step = step || 1;
+      if (step > 0) {
+        for (var i=start, index=0; i<end; i+=step, ++index) {
+          this[index] = i;
+        }
+      }
+    }
+    else {
+      step = step || -1;
+      if (step < 0) {
+        for (var i=start, index=0; i>end; i+=step, ++index) {
+          this[index] = i;
+        }
+      }
+    }
+    
+    return this;
+  });
+  
+  /**
+   * @method shuffle
+   * @chainable
+   * 自身の要素をランダムにシャッフルします。
+   *
+   * ### Example
+   *     arr = [1, 2, 3, 4, 5];
+   *     arr.shuffle(); // => [5, 1, 4, 2, 3] など
+   */
+  Array.prototype.$method("shuffle", function() {
+    for (var i=0,len=this.length; i<len; ++i) {
+      var j = Math.randint(0, len-1);
+      
+      if (i != j) {
+        this.swap(i, j);
+      }
+    }
+    
+    return this;
+  });
+
+  /**
+   * @method sum
+   * 要素の合計値を返します。
+   *
+   * 要素に数値以外が含まれる場合の挙動は不定です。
+   *
+   * ### Example
+   *     arr = [1, 2, 3, 4, 5, 6];
+   *     arr.sum(); // => 21
+   *
+   * @return {Number} 合計
+   */
+  Array.prototype.$method("sum", function() {
+    var sum = 0;
+    for (var i=0,len=this.length; i<len; ++i) {
+      sum += this[i];
+    }
+    return sum;
+  });
+
+  /**
+   * @method average
+   * 要素の平均値を返します。
+   *
+   * 要素に数値以外が含まれる場合の挙動は不定です。
+   *
+   * ### Example
+   *     arr = [1, 2, 3, 4, 5, 6]
+   *     arr.average(); // => 3.5
+   *
+   * @return {Number} 平均値
+   */
+  Array.prototype.$method("average", function() {
+    var sum = 0;
+    var len = this.length;
+    for (var i=0; i<len; ++i) {
+      sum += this[i];
+    }
+    return sum/len;
+  });
+
+  /**
+   * @method each
+   * @chainable
+   * 要素を順番に渡しながら関数を繰り返し実行します。
+   *
+   * メソッドチェーンに対応していますが、このメソッドによって自分自身は変化しません。
+   *
+   * ###Reference
+   * - [Array.prototype.forEach() - JavaScript | MDN](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach)
+   *
+   * ### Example
+   *     arr = [1, 2, 3];
+   *     arr.each( function(elm) {
+   *       console.log(elm * elm)
+   *     });
+   *     // => 1
+   *     //    4
+   *     //    9
+   *
+   * @param {Function} callback 各要素に対して実行するコールバック関数
+   * @param {Object} [self=this] callback 内で this として参照される値
+   */
+  Array.prototype.$method("each", function() {
+    this.forEach.apply(this, arguments);
+    return this;
+  });
+
+  
+  /**
+   * @method toULElement
+   * ULElement に変換します（未実装）
+   */
+  Array.prototype.$method("toULElement", function(){
+      // TODO: 
+  });
+
+  /**
+   * @method toOLElement
+   * OLElement に変換します（未実装）
+   */
+  Array.prototype.$method("toOLElement", function(){
+      // TODO:
+  });
+
+  
+  /**
+   * @method range
+   * @static
+   * インスタンスメソッドの {@link #range} と同じです。
+   *
+   * ### Example
+   *     Array.range(2, 14, 5); // => [2, 7, 12]
+   */
+  Array.$method("range", function(start, end, step) {
+    return Array.prototype.range.apply([], arguments);
+  });
+
+
+  /**
+   * @method of
+   * @static
+   * ES6 準拠の of 関数です。可変長引数をとって Array オブジェクトにして返します。
+   *
+   * ### Example
+   *     Array.of();        // => []
+   *     Array.of(1, 2, 3); // => [1, 2, 3]
+   *
+   * @param {Object} elementN 生成する配列の要素
+   * @return {Array} 生成した配列
+   */
+  Array.$method("of", function() {
+    return Array.prototype.slice.call(arguments);
+  });
+
+  /**
+   * @method from
+   * @static
+   * ES6 準拠の from 関数です。array-like オブジェクトかiterable オブジェクトから新しい配列を生成します。
+   *
+   * array-like オブジェクトとは、length プロパティを持ち、数字の添字でアクセス可能なオブジェクトのことです。
+   * 通常の配列のほか、String、arguments、NodeList なども array-like オブジェクトです。
+   *
+   * iterable オブジェクトとは、Symbol.iterator プロパティを持つオブジェクトのことです。
+   * 通常の配列のほか、String、arguments、NodeList なども iterable オブジェクトです。
+   *
+   * ### Example
+   *     Array.from([1, 2, 3], function(elm){ return elm * elm} ); // => [1, 4, 9]
+   *     Array.from("foo");                                        // => ["f", "o", "o"]
+   *     Array.from( document.querySelectorAll("span"))            // => [Element, Element, Element,...]
+   *
+   * @param {Object} arrayLike 配列に変換する array-like オブジェクト
+   * @param {Function} [callback] arrayLike のすべての要素に対して実行するマップ関数
+   * @param {Object} [context] callback 内で this として参照される値
+   * @return {Array} 生成した配列
+   */
+  Array.$method("from", function(arrayLike, callback, context) {
+    if (!Object(arrayLike).length) return [];
+
+    var result = [];
+    if (Symbol && Symbol.iterator && arrayLike[Symbol.iterator]) {
+        var iterator = arrayLike[Symbol.iterator]();
+        while (true) {
+            var iteratorResult = iterator.next();
+            if (iteratorResult.done) break;
+
+            var value = typeof callback === 'function' ? callback.bind(context || this)(iteratorResult.value) : iteratorResult.value;
+            result.push(value);
+        }
+        return result;
+    }
+
+    for (var i = 0, len = arrayLike.length; i < len; i++) {
+        result.push(arrayLike[i]);
+    }
+    return result.map(typeof callback == 'function' ? callback : function(item) {
+      return item;
+    }, context);
+  });
+  
+  /**
+   * @method most
+   * 指定した関数の返り値が最小となる要素と最大となる要素をまとめて返します。
+   *
+   * 空の配列に対して実行すると {max: Infinity, min: -Infinity} を返します。
+   *
+   * ### Example
+   *     [5,1,4,1,9,2,-10].most(); // => {max:9, min: -10}
+   *
+   *     points = [ {x:0, y:0}, {x:640, y:960}, {x:-80, y:100} ];
+   *     points.most(function(e){return e.x;}).min; // => [x:-80, y:100]
+   *     points.most(function(e){return e.y;}).max; // => [x:640, y:960]
+   *
+   * @param {Function} [callback] 各要素に対して実行するコールバック関数
+   * @param {Object} [self=this] 関数内で this として参照される値。デフォルトは自分自身。
+   * @return {Object} max と min をキーに持つオブジェクト
+   * @return {Object} return.min 関数の返り値が最小となる要素
+   * @return {Object} return.max 関数の返り値が最大となる要素
+   */
+  Array.prototype.$method("most", function(func, self) {
+    if(this.length < 1){
+      return {
+        max: -Infinity,
+        min: Infinity,
+      };
+    }
+    if(func){
+      var maxValue = -Infinity;
+      var minValue = Infinity;
+      var maxIndex = 0;
+      var minIndex = 0;
+      
+      if(typeof self === 'undefined'){self = this;}
+      
+      for (var i = 0, len = this.length; i < len; ++i) {
+        var v = func.call(self, this[i], i, this);
+        if(maxValue < v){
+          maxValue = v;
+          maxIndex = i;
+        }
+        if(minValue > v){
+          minValue = v;
+          minIndex = i;
+        }
+      }
+      return {
+        max: this[maxIndex],
+        min: this[minIndex],
+      };
+    }
+    else{
+      var max = -Infinity;
+      var min = Infinity;
+      for (var i = 0, len = this.length;i < len; ++i) {
+        if(max<this[i]){max=this[i];}
+        if(min>this[i]){min=this[i];}
+      }
+      return {
+        max: max,
+        min: min,
+      };
+    }
+    
+  });  
+
+})();
+
+/*
+ * math.js
+ */
+
+;(function() {
+    
+  /**
+   * @class global.Math
+   * # 拡張した Math クラス
+   * 数学的な処理を扱う Math クラスを拡張しています。
+   */
+
+  
+  /**
+   * @property DEG_TO_RAD
+   * 度をラジアンに変換するための定数です。
+   */
+  Math.DEG_TO_RAD = Math.PI/180;
+  
+  /**
+   * @property RAD_TO_DEG
+   * ラジアンを度に変換するための定数です。
+   */
+  Math.RAD_TO_DEG = 180/Math.PI;
+  
+  /**
+   * @property PHI
+   * 黄金比です。
+   */
+  Math.PHI = (1 + Math.sqrt(5)) / 2;
+  
+  /**
+   * @static
+   * @method degToRad
+   * 度をラジアンに変換します。
+   *
+   * ### Example
+   *     Math.degToRad(180); // => 3.141592653589793
+   *
+   * @param {Number} deg 度
+   * @return {Number} ラジアン
+   */
+  Math.degToRad = function(deg) {
+    return deg * Math.DEG_TO_RAD;
+  };
+  
+  /**
+   * @static
+   * @method radToDeg
+   * ラジアンを度に変換します。
+   *
+   * ### Example
+   *     Math.radToDeg(Math.PI/4); // => 45
+   *
+   * @param {Number} rad ラジアン
+   * @return {Number} 度
+   */
+  Math.radToDeg = function(rad) {
+    return rad * Math.RAD_TO_DEG;
+  };
+  
+
+  
+  /**
+   * @static
+   * @method clamp
+   * 指定した値を指定した範囲に収めた結果を返します。
+   *
+   * ### Example
+   *     Math.clamp(120, 0, 640); // => 120
+   *     Math.clamp(980, 0, 640); // => 640
+   *     Math.clamp(-80, 0, 640); // => 0
+   *
+   * @param {Number} value 値
+   * @param {Number} min  範囲の下限
+   * @param {Number} max  範囲の上限
+   * @return {Number} 丸めた結果の値
+   */
+  Math.$method("clamp", function(value, min, max) {
+    return (value < min) ? min : ( (value > max) ? max : value );
+  });
+  
+  /**
+   * @static
+   * @method inside
+   * 指定した値が指定した値の範囲にあるかどうかを返します。
+   *
+   * ### Example
+   *     Math.inside(980, 0, 640); // => false
+   *     Math.inside(120, 0, 640); // => true
+   *
+   * @param {Number} value チェックする値
+   * @param {Number} min  範囲の下限
+   * @param {Number} max  範囲の上限
+   * @return {Boolean} 範囲内に値があるかないか
+   */
+  Math.$method("inside", function(value, min, max) {
+    return (value >= min) && (value) <= max;
+  });
+  
+  /**
+   * @static
+   * @method randint
+   * 指定された範囲内でランダムな整数値を生成します。
+   *
+   * ### Example
+   *     Math.randint(-4, 4); // => -4、0、3、4 など
+   *
+   * @param {Number} min  範囲の最小値
+   * @param {Number} max  範囲の最大値
+   * @return {Number} ランダムな整数値
+   */
+  Math.$method("randint", function(min, max) {
+    return Math.floor( Math.random()*(max-min+1) ) + min;
+  });
+  
+  /**
+   * @static
+   * @method randfloat
+   * 指定された範囲内でランダムな数値を生成します。
+   *
+   * ### Example
+   *     Math.randfloat(-4, 4); // => -2.7489193824000937 など
+   *
+   * @param {Number} min  範囲の最小値
+   * @param {Number} max  範囲の最大値
+   * @return {Number} ランダムな数値
+   */
+  Math.$method("randfloat", function(min, max) {
+    return Math.random()*(max-min)+min;
+  });
+
+  /**
+   * @static
+   * @method randbool
+   * ランダムに真偽値を生成します。
+   * 引数で百分率を指定する事もできます。
+   *
+   * ### Example
+   *     Math.randbool();   // => true または false
+   *     Math.randbool(80); // => 80% の確率で true
+   *
+   * @param {Number} percent  真になる百分率
+   * @return {Boolean} ランダムな真偽値
+   */
+  Math.$method("randbool", function(perecent) {
+    return Math.randint(0, 100) < (perecent || 50);
+  });
+    
+})();
+/*
  * number.js
  */
 
@@ -1212,1097 +2146,6 @@
 })();
 
 
-/*
- * array.js
- */
-
-;(function() {
-
-  /**
-   * @class global.Array
-   * # 拡張した Array クラス
-   * Array クラスを拡張しています。
-   */
-
-
-  /**
-   * @property {Object} first
-   * 最初の要素
-   *
-   * ### Example
-   *     arr = [6, 5, 2, 3, 1, 4];
-   *     arr.first; // => 6
-   */
-  Array.prototype.accessor("first", {
-      "get": function()   { return this[0]; },
-      "set": function(v)  { this[0] = v; }
-  });
-  
-  /**
-   * @property {Object} last
-   * 最後の要素
-   *
-   * ### Example
-   *     arr = [6, 5, 2, 3, 1, 4];
-   *     arr.last; // => 4
-   */
-  Array.prototype.accessor("last", {
-    "get": function()   { return this[this.length-1]; },
-    "set": function(v)  { this[this.length-1] = v; }
-  });
-
-  /**
-   * @method equals
-   * 渡された配列と等しいかどうかをチェックします。
-   *
-   * 要素同士を === で比較します。要素に配列が含まれている場合は {@link #deepEquals} を使用してください。
-   *
-   * ### Example
-   *     arr1 = [6, 5, 2, 3, 1, 4];
-   *     arr1.equals([6, 5, 2, 3, 1, 4]);       // => true
-   *     arr2 = [6, 5, 2, [3, 1], 4];
-   *     arr2.equals([6, 5, 2, [3, 1], 4]);     // => false
-   *     arr2.deepEquals([6, 5, 2, [3, 1], 4]); // => true
-   *
-   * @param {Array} arr 比較する対象の配列
-   * @return {Boolean} チェックの結果
-   */
-  Array.prototype.$method("equals", function(arr) {
-    // 長さチェック
-    if (this.length !== arr.length) return false;
-    
-    for (var i=0,len=this.length; i<len; ++i) {
-      if (this[i] !== arr[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
-  /**
-   * @method deepEquals
-   * ネストされている配列を含め、渡された配列と等しいかどうかをチェックします。
-   *
-   * ※equalsDeep にするか検討. (Java では deepEquals なのでとりあえず合わせとく)
-   *
-   * ### Example
-   *     arr = [6, 5, 2, [3, 1], 4];
-   *     arr.equals([6, 5, 2, [3, 1], 4]);     // => false
-   *     arr.deepEquals([6, 5, 2, [3, 1], 4]); // => true
-   *
-   * @param {Array} arr 比較する対象の配列
-   * @return {Boolean} チェックの結果
-   */
-  Array.prototype.$method("deepEquals", function(arr) {
-    // 長さチェック
-    if (this.length !== arr.length) return false;
-    
-    for (var i=0,len=this.length; i<len; ++i) {
-      var result = (this[i].deepEquals) ? this[i].deepEquals(arr[i]) : (this[i] === arr[i]);
-      if (result === false) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  /**
-   * @method contains
-   * 指定した要素が配列に含まれているかをチェックします。
-   *
-   * 比較には厳密な同値（三重イコール演算子 === で使われるのと同じ方法）を用います。
-   *
-   * ### Example
-   *     arr = [6, 5, 2, 3, 1, 4];
-   *     arr.contains(3);     // => true
-   *     arr.contains(3, 4);  // => false
-   *     arr.contains(3, -4); // => true
-   *     arr.contains("6");   // => false
-   *
-   * @param {Object} item チェックするオブジェクト
-   * @param {Number} [fromIndex=0] 検索を始める位置。負数を指定した場合は末尾からのオフセットと見なします。
-   * @return {Boolean} チェックの結果
-   */
-  Array.prototype.$method("contains", function(item, fromIndex) {
-    return this.indexOf(item, fromIndex) != -1;
-  });
-  
-  /**
-   * @method at
-   * 指定したインデックスの要素を返します（ループ・負数の指定可）。
-   *
-   * 添字が負数の場合は末尾からのオフセットとみなします。末尾の要素が -1 番目になります。  
-   * 添字の絶対値が Array.length 以上の場合はループします。
-   *
-   * ### Example
-   *     arr = ['a', 'b', 'c', 'd', 'e', 'f'];
-   *     arr.at(0);  // => 'a'
-   *     arr.at(6);  // => 'a'
-   *     arr.at(13); // => 'b'
-   *     arr.at(-1); // => 'f'
-   *     arr.at(-8); // => 'e'
-   *
-   * @param {Number} index 添字
-   * @return {Object} 添字で指定された要素
-   */
-  Array.prototype.$method("at", function(i) {
-    i%=this.length;
-    i+=this.length;
-    i%=this.length;
-    return this[i];
-  });
-
-
-  /**
-   * @method find
-   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初の要素を返します。
-   *
-   * どの要素もマッチしなければ undefined を返します。
-   *
-   * ### Example
-   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
-   *     arr.find( function(elm) {
-   *       return elm.indexOf('a') >= 0;
-   *     });
-   *     // => 'bar'
-   *
-   * @param {Function} callback 各要素に対して実行するコールバック関数
-   * @param {Object} [self=this] callback 内で this として参照される値。デフォルトは呼び出し時の this。
-   * @return {Object} 条件にマッチした最初の要素、または undefined
-   */
-  Array.prototype.$method("find", function(fn, self) {
-    var target = null;
-
-    this.some(function(elm, i) {
-      if (fn.call(self, elm, i, this)) {
-        target = elm;
-        return true;
-      }
-    });
-
-    return target;
-  });
-
-  /**
-   * @method findIndex
-   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初のインデックスを返します。
-   *
-   * どの要素もマッチしなければ -1 を返します。
-   *
-   * ### Example
-   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
-   *     arr.findIndex( function(elm) {
-   *       return elm.indexOf('a') >= 0;
-   *     });
-   *     // => 1
-   *
-   * @param {Function} callback 各要素に対して実行するコールバック関数
-   * @param {Object} [self=this] callback 内で this として参照される値。デフォルトは呼び出し時の this。
-   * @return {Object} 条件にマッチした最初のインデックス、または -1
-   */
-  Array.prototype.$method("findIndex", function(fn, self) {
-    var target = null;
-
-    this.some(function(elm, i) {
-      if (fn.call(self, elm, i, this)) {
-        target = i;
-        return true;
-      }
-    });
-
-    return target;
-  });
-  
-  /**
-   * @method swap
-   * @chainable
-   * a 番目の要素 と b 番目の要素を入れ替えます。
-   *
-   * ### Example
-   *     arr1 = ['a', 'b', 'c', 'd'];
-   *     arr2 = arr1.swap(0, 3); // => ['d', 'b', 'c', 'a']
-   *     arr1 === arr2;          // => true
-   *
-   * @param {Number} a  インデックス
-   * @param {Number} b  インデックス
-   */
-  Array.prototype.$method("swap", function(a, b) {
-    var temp = this[a];
-    this[a] = this[b];
-    this[b] = temp;
-    
-    return this;
-  });
-
-  /**
-   * @method erase
-   * @chainable
-   * 指定したオブジェクトと一致した最初の要素を削除します。
-   *
-   * ### Example
-   *     arr1 = ['a', 'b', 'b', 'c'];
-   *     arr2 = arr1.erase('b'); // => ['a', 'b', 'c']
-   *     arr1 === arr2;          // => true
-   *
-   * @param {Object} elm 削除したいオブジェクト
-   */
-  Array.prototype.$method("erase", function(elm) {
-    var index  = this.indexOf(elm);
-    if (index >= 0) {
-      this.splice(index, 1);
-    }
-    return this;
-  });
-  
-  /**
-   * @method eraseAll
-   * @chainable
-   * 指定したオブジェクトと一致したすべての要素を削除します。
-   *
-   * ### Example
-   *     arr1 = ['a', 'b', 'b', 'c'];
-   *     arr2 = arr1.eraseAll('b'); // => ['a', 'c']
-   *     arr1 === arr2;             // => true
-   *
-   * @param {Object} elm 削除したいオブジェクト
-   */
-  Array.prototype.$method("eraseAll", function(elm) {
-    for (var i=0,len=this.length; i<len; ++i) {
-      if (this[i] == elm) {
-        this.splice(i--, 1);
-      }
-    }
-    return this;
-  });
-  
-  /**
-   * @method eraseIf
-   * @chainable
-   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）最初の要素を削除します。
-   *
-   * どの要素もマッチしなければ何も起きません。
-   *
-   * ### Example
-   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
-   *     arr.eraseIf( function(elm) {
-   *       return elm.indexOf('o') >= 0;
-   *     });
-   *     // => ['bar', 'hoge', 'fuga']
-   *
-   * @param {Function} callback 各要素に対して実行するコールバック関数
-   */
-  Array.prototype.$method("eraseIf", function(fn) {
-    for (var i=0,len=this.length; i<len; ++i) {
-      if ( fn(this[i], i, this) ) {
-        this.splice(i, 1);
-        break;
-      }
-    }
-    return this;
-  });
-  
-  /**
-   * @method eraseIfAll
-   * @chainable
-   * 各要素を引数にして関数を実行し、その値が真となる（＝条件にマッチする）すべての要素を削除します。
-   *
-   * どの要素もマッチしなければ何も起きません。
-   *
-   * ### Example
-   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
-   *     arr.eraseIfAll( function(elm) {
-   *       return elm.indexOf('o') >= 0;
-   *     });
-   *     // => ['bar', 'fuga']
-   *
-   * @param {Function} callback 各要素に対して実行するコールバック関数
-   */
-  Array.prototype.$method("eraseIfAll", function(fn) {
-    for (var i=0,len=this.length; i<len; ++i) {
-      if ( fn(this[i], i, this) ) {
-        this.splice(i--, 1);
-        len--;
-      }
-    }
-    return this;
-  });
-  
-  /**
-   * @method random
-   * 配列からランダムに1つ取り出した要素を返します。
-   *
-   * 取り出す範囲をインデックスで指定することもできます。  
-   * {@link #pickup}、{@link #lot} と同じです。  
-   *
-   * ### Example
-   *     arr = ['foo', 'bar', 'hoge', 'fuga'];
-   *     arr.random(2, 3);  // => 'hoge' または 'fuga'
-   *
-   * @param {Number} [min=0] インデックスの下限
-   * @param {Number} [max=配列の最大インデックス] インデックスの上限
-   * @return {Object} ランダムに1つ取り出した要素
-   */
-  Array.prototype.$method("random", function(min, max) {
-    min = min || 0;
-    max = max || this.length-1;
-    return this[ Math.randint(min, max) ];
-  });
-  
-  /**
-   * @method pickup
-   * 配列からランダムで1つ取り出した要素を返します。
-   *
-   * {@link #random}、{@link #lot} と同じです。
-   * @inheritdoc #random
-   */
-  Array.prototype.$method("pickup", function(min, max) {
-    min = min || 0;
-    max = max || this.length-1;
-    return this[ Math.randint(min, max) ];
-  });
-  
-  /**
-   * @method lot
-   * 配列からランダムで1つ取り出した要素を返します。
-   *
-   * {@link #random}、{@link #pickup} と同じです。
-   * @inheritdoc #random
-   */
-  Array.prototype.$method("lot", function(min, max) {
-    min = min || 0;
-    max = max || this.length-1;
-    return this[ Math.randint(min, max) ];
-  });
-  
-  /**
-   * @method uniq
-   * 要素の重複を取り除いた配列を生成して返します。
-   *
-   * 自分自身は破壊されません。
-   *
-   * ### Example
-   *     arr = [1, 2, 3, 4, 3, 2];
-   *     arr.uniq(); // => [1, 2, 3, 4]
-   *
-   * @param {Number} [deep] ※未使用
-   * @return {Object} 新しい配列
-   */
-  Array.prototype.$method("uniq", function(deep) {
-    return this.filter(function(value, index, self) {
-      return self.indexOf(value) === index;
-    });
-  });
-  
-
-  /**
-   * @method flatten
-   * 自身を再帰的に平滑化した配列を生成して返します。
-   *
-   * level を指定しなければ深さの際限なく完全に平滑化します。
-   *
-   * ### Example
-   *     arr = [1, 2, [3, [4, 5]]];
-   *     arr.flatten();  // => [1, 2, 3, 4, 5]
-   *     arr.flatten(1); // => [1, 2, 3, [4, 5]]
-   *
-   * @param {Number} [level=0]  平滑化の再帰の深さ
-   * @return {Object} 平滑化した配列
-   */
-  Array.prototype.$method("flatten", function(level) {
-    var arr = null;
-
-    if (level) {
-      arr = this;
-      for (var i=0; i<level; ++i) {
-        arr = Array.prototype.concat.apply([], arr);
-      }
-    }
-    else {
-      // 完全フラット
-      arr = this.reduce(function (previousValue, curentValue) {
-        return Array.isArray(curentValue) ?
-          previousValue.concat(curentValue.flatten()) : previousValue.concat(curentValue);
-      }, []);
-    }
-
-    return arr;
-  });
-
-  /**
-   * @method clone
-   * 自身のコピーを生成して返します。
-   *
-   * ### Example
-   *     arr1 = [1, 2, [3, 4]];
-   *     arr2 = arr1.clone();      // => [1, 2, [3, 4]]
-   *     arr1[2] === arr2[2];      // => true
-   *     arr1[2][0] = 9;
-   *     arr2;                     // => [1, 2, [9, 4]]
-   *     arr1 = [1, 2, [3, 4]];
-   *     arr2 = arr1.clone(true);  // => [1, 2, [3, 4]]
-   *     arr1[2] === arr2[2];      // => false
-   *     arr1[2][0] = 9;
-   *     arr2;                     // => [1, 2, [3, 4]]
-   *
-   * @param {Boolean} [deep=false] 配列のネストをたどって複製するかどうか
-   * @return {Object} 新しい配列
-   */
-  Array.prototype.$method("clone", function(deep) {
-    if (deep === true) {
-      var a = Array(this.length);
-      for (var i=0,len=this.length; i<len; ++i) {
-        a[i] = (this[i].clone) ? this[i].clone(deep) : this[i];
-      }
-      return a;
-    }
-    else {
-      return Array.prototype.slice.apply(this);
-    }
-  });
-
-
-  /**
-   * @method clear
-   * @chainable
-   * 自身を空の配列にします。
-   *
-   * ### Example
-   *     arr = [1, 2, [3, 4]];
-   *     arr.clear(); // => []
-   */
-  Array.prototype.$method("clear", function() {
-    this.length = 0;
-    return this;
-  });
-  
-  /**
-   * @method fill
-   * @chainable
-   * 自身の一部の要素を特定の値で埋めます。
-   *
-   * ### Example
-   *     arr = [1, 2, 3, 4, 5];
-   *     arr.fill("x");       // => ["x", "x", "x", "x", "x"]
-   *     arr.fill("x", 2, 4); // => [1, 2, "x", "x", 5]
-   *
-   * @param {Object} value 埋める値
-   * @param {Number} [start=0] 値を埋める最初のインデックス
-   * @param {Number} [end=自身の配列の長さ] 値を埋める最後のインデックス+1
-   */
-  Array.prototype.$method("fill", function(value, start, end) {
-    start = start || 0;
-    end   = end   || (this.length);
-    
-    for (var i=start; i<end; ++i) {
-      this[i] = value;
-    }
-    
-    return this;
-  });
-  
-
-  /**
-   * @method range
-   * @chainable
-   * 自身を等差数列（一定間隔の整数値の列）とします。
-   *
-   * - 引数が1つの場合、0～end（end含まず）の整数の配列です。  
-   * - 引数が2つの場合、start～end（end含まず）の整数の配列です。  
-   * - 引数が3つの場合、start～end（end含まず）かつ start + n * step (nは整数)を満たす整数の配列です。
-   *
-   * ### Example
-   *     arr = [];
-   *     arr.range(4);        // => [0, 1, 2, 3]
-   *     arr.range(2, 5);     // => [2, 3, 4]
-   *     arr.range(2, 14, 5); // => [2, 7, 12]
-   *     arr.range(2, -3);    // => [2, 1, 0, -1, -2]
-   *
-   * @param {Number} start 最初の値（デフォルトは 0）
-   * @param {Number} end 最後の値（省略不可）
-   * @param {Number} [step=1または-1] 間隔
-   */
-  Array.prototype.$method("range", function(start, end, step) {
-    this.clear();
-    
-    if (arguments.length == 1) {
-      for (var i=0; i<start; ++i) this[i] = i;
-    }
-    else if (start < end) {
-      step = step || 1;
-      if (step > 0) {
-        for (var i=start, index=0; i<end; i+=step, ++index) {
-          this[index] = i;
-        }
-      }
-    }
-    else {
-      step = step || -1;
-      if (step < 0) {
-        for (var i=start, index=0; i>end; i+=step, ++index) {
-          this[index] = i;
-        }
-      }
-    }
-    
-    return this;
-  });
-  
-  /**
-   * @method shuffle
-   * @chainable
-   * 自身の要素をランダムにシャッフルします。
-   *
-   * ### Example
-   *     arr = [1, 2, 3, 4, 5];
-   *     arr.shuffle(); // => [5, 1, 4, 2, 3] など
-   */
-  Array.prototype.$method("shuffle", function() {
-    for (var i=0,len=this.length; i<len; ++i) {
-      var j = Math.randint(0, len-1);
-      
-      if (i != j) {
-        this.swap(i, j);
-      }
-    }
-    
-    return this;
-  });
-
-  /**
-   * @method sum
-   * 要素の合計値を返します。
-   *
-   * 要素に数値以外が含まれる場合の挙動は不定です。
-   *
-   * ### Example
-   *     arr = [1, 2, 3, 4, 5, 6];
-   *     arr.sum(); // => 21
-   *
-   * @return {Number} 合計
-   */
-  Array.prototype.$method("sum", function() {
-    var sum = 0;
-    for (var i=0,len=this.length; i<len; ++i) {
-      sum += this[i];
-    }
-    return sum;
-  });
-
-  /**
-   * @method average
-   * 要素の平均値を返します。
-   *
-   * 要素に数値以外が含まれる場合の挙動は不定です。
-   *
-   * ### Example
-   *     arr = [1, 2, 3, 4, 5, 6]
-   *     arr.average(); // => 3.5
-   *
-   * @return {Number} 平均値
-   */
-  Array.prototype.$method("average", function() {
-    var sum = 0;
-    var len = this.length;
-    for (var i=0; i<len; ++i) {
-      sum += this[i];
-    }
-    return sum/len;
-  });
-
-  /**
-   * @method each
-   * @chainable
-   * 要素を順番に渡しながら関数を繰り返し実行します。
-   *
-   * メソッドチェーンに対応していますが、このメソッドによって自分自身は変化しません。
-   *
-   * ###Reference
-   * - [Array.prototype.forEach() - JavaScript | MDN](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach)
-   *
-   * ### Example
-   *     arr = [1, 2, 3];
-   *     arr.each( function(elm) {
-   *       console.log(elm * elm)
-   *     });
-   *     // => 1
-   *     //    4
-   *     //    9
-   *
-   * @param {Function} callback 各要素に対して実行するコールバック関数
-   * @param {Object} [self=this] callback 内で this として参照される値
-   */
-  Array.prototype.$method("each", function() {
-    this.forEach.apply(this, arguments);
-    return this;
-  });
-
-  
-  /**
-   * @method toULElement
-   * ULElement に変換します（未実装）
-   */
-  Array.prototype.$method("toULElement", function(){
-      // TODO: 
-  });
-
-  /**
-   * @method toOLElement
-   * OLElement に変換します（未実装）
-   */
-  Array.prototype.$method("toOLElement", function(){
-      // TODO:
-  });
-
-  
-  /**
-   * @method range
-   * @static
-   * インスタンスメソッドの {@link #range} と同じです。
-   *
-   * ### Example
-   *     Array.range(2, 14, 5); // => [2, 7, 12]
-   */
-  Array.$method("range", function(start, end, step) {
-    return Array.prototype.range.apply([], arguments);
-  });
-
-
-  /**
-   * @method of
-   * @static
-   * ES6 準拠の of 関数です。可変長引数をとって Array オブジェクトにして返します。
-   *
-   * ### Example
-   *     Array.of();        // => []
-   *     Array.of(1, 2, 3); // => [1, 2, 3]
-   *
-   * @param {Object} elementN 生成する配列の要素
-   * @return {Array} 生成した配列
-   */
-  Array.$method("of", function() {
-    return Array.prototype.slice.call(arguments);
-  });
-
-  /**
-   * @method from
-   * @static
-   * ES6 準拠の from 関数です。array-like オブジェクトかiterable オブジェクトから新しい配列を生成します。
-   *
-   * array-like オブジェクトとは、length プロパティを持ち、数字の添字でアクセス可能なオブジェクトのことです。
-   * 通常の配列のほか、String、arguments、NodeList なども array-like オブジェクトです。
-   *
-   * iterable オブジェクトとは、Symbol.iterator プロパティを持つオブジェクトのことです。
-   * 通常の配列のほか、String、arguments、NodeList なども iterable オブジェクトです。
-   *
-   * ### Example
-   *     Array.from([1, 2, 3], function(elm){ return elm * elm} ); // => [1, 4, 9]
-   *     Array.from("foo");                                        // => ["f", "o", "o"]
-   *     Array.from( document.querySelectorAll("span"))            // => [Element, Element, Element,...]
-   *
-   * @param {Object} arrayLike 配列に変換する array-like オブジェクト
-   * @param {Function} [callback] arrayLike のすべての要素に対して実行するマップ関数
-   * @param {Object} [context] callback 内で this として参照される値
-   * @return {Array} 生成した配列
-   */
-  Array.$method("from", function(arrayLike, callback, context) {
-    if (!Object(arrayLike).length) return [];
-
-    var result = [];
-    if (Symbol && Symbol.iterator && arrayLike[Symbol.iterator]) {
-        var iterator = arrayLike[Symbol.iterator]();
-        while (true) {
-            var iteratorResult = iterator.next();
-            if (iteratorResult.done) break;
-
-            var value = typeof callback === 'function' ? callback.bind(context || this)(iteratorResult.value) : iteratorResult.value;
-            result.push(value);
-        }
-        return result;
-    }
-
-    for (var i = 0, len = arrayLike.length; i < len; i++) {
-        result.push(arrayLike[i]);
-    }
-    return result.map(typeof callback == 'function' ? callback : function(item) {
-      return item;
-    }, context);
-  });
-  
-  /**
-   * @method most
-   * 指定した関数の返り値が最小となる要素と最大となる要素をまとめて返します。
-   *
-   * 空の配列に対して実行すると {max: Infinity, min: -Infinity} を返します。
-   *
-   * ### Example
-   *     [5,1,4,1,9,2,-10].most(); // => {max:9, min: -10}
-   *
-   *     points = [ {x:0, y:0}, {x:640, y:960}, {x:-80, y:100} ];
-   *     points.most(function(e){return e.x;}).min; // => [x:-80, y:100]
-   *     points.most(function(e){return e.y;}).max; // => [x:640, y:960]
-   *
-   * @param {Function} [callback] 各要素に対して実行するコールバック関数
-   * @param {Object} [self=this] 関数内で this として参照される値。デフォルトは自分自身。
-   * @return {Object} max と min をキーに持つオブジェクト
-   * @return {Object} return.min 関数の返り値が最小となる要素
-   * @return {Object} return.max 関数の返り値が最大となる要素
-   */
-  Array.prototype.$method("most", function(func, self) {
-    if(this.length < 1){
-      return {
-        max: -Infinity,
-        min: Infinity,
-      };
-    }
-    if(func){
-      var maxValue = -Infinity;
-      var minValue = Infinity;
-      var maxIndex = 0;
-      var minIndex = 0;
-      
-      if(typeof self === 'undefined'){self = this;}
-      
-      for (var i = 0, len = this.length; i < len; ++i) {
-        var v = func.call(self, this[i], i, this);
-        if(maxValue < v){
-          maxValue = v;
-          maxIndex = i;
-        }
-        if(minValue > v){
-          minValue = v;
-          minIndex = i;
-        }
-      }
-      return {
-        max: this[maxIndex],
-        min: this[minIndex],
-      };
-    }
-    else{
-      var max = -Infinity;
-      var min = Infinity;
-      for (var i = 0, len = this.length;i < len; ++i) {
-        if(max<this[i]){max=this[i];}
-        if(min>this[i]){min=this[i];}
-      }
-      return {
-        max: max,
-        min: min,
-      };
-    }
-    
-  });  
-
-})();
-
-/*
- * date.js
- */
-
-(function() {
-  
-  /**
-   * @class global.Date
-   * # 拡張した Date クラス
-   * 日付を扱う Date クラスを拡張しています。
-   */
-  
-  var MONTH = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  
-  var WEEK = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-  ];
-  
-  /**
-   * @method format
-   * 指定したフォーマットに従って日付を文字列化します。
-   *
-   * <table border="1">
-   *   <tr><td>変換指定文字列</td><td>意味</td></tr>
-   *   <tr><td>yyyy</td><td>西暦年（4桁）</td></tr>
-   *   <tr><td>yy</td><td>西暦年（2桁）</td></tr>
-   *   <tr><td>y</td><td>西暦年</td></tr>
-   *   <tr><td>MMMM</td><td>月（英語名）</td></tr>
-   *   <tr><td>MMM</td><td>月（英語省略名）</td></tr>
-   *   <tr><td>MM</td><td>月（2桁数字）</td></tr>
-   *   <tr><td>M</td><td>月</td></tr>
-   *   <tr><td>dd</td><td>日（2桁）</td></tr>
-   *   <tr><td>d</td><td>日</td></tr>
-   *   <tr><td>EEEE</td><td>曜日（英語名）</td></tr>
-   *   <tr><td>EEE</td><td>曜日（英語省略名）</td></tr>
-   *   <tr><td>HH</td><td>時（24時間表記・2桁）</td></tr>
-   *   <tr><td>H</td><td>時（24時間表記）</td></tr>
-   *   <tr><td>mm</td><td>分（2桁）</td></tr>
-   *   <tr><td>m</td><td>分</td></tr>
-   *   <tr><td>ss</td><td>秒（2桁）</td></tr>
-   *   <tr><td>s</td><td>秒</td></tr>
-   * </table>
-   * 桁数が指定されているものは0パディングされます。
-   *
-   * ### Example
-   *     (new Date()).format("yyyy-MM-dd(EEE)"); // => "2016-04-05(Tue)" など
-   *
-   * @param {String} pattern フォーマット文字列
-   * @return {String} フォーマット文字列に従って生成された文字列
-   */
-  Date.prototype.$method('format', function(pattern) {
-    var year    = this.getFullYear();
-    var month   = this.getMonth();
-    var date    = this.getDate();
-    var day     = this.getDay();
-    var hours   = this.getHours();
-    var minutes = this.getMinutes();
-    var seconds = this.getSeconds();
-    var millseconds = this.getMilliseconds();
-    
-    var patterns = {
-      'yyyy': String(year).padding(4, '0'),
-      'yy': year.toString().substr(2, 2),
-      'y': year,
-
-      'MMMM': MONTH[month],
-      'MMM': MONTH[month].substr(0, 3),
-      'MM': String(month+1).padding(2, '0'),
-      'M': (month+1),
-
-      'dd': String(date).padding(2, '0'),
-      'd': date,
-
-      'EEEE': WEEK[day],
-      'EEE': WEEK[day].substr(0, 3),
-
-      'HH': String(hours).padding(2, '0'),
-      'H': hours,
-
-      'mm': String(minutes).padding(2, '0'),
-      'm': minutes,
-
-      'ss': String(seconds).padding(2, '0'),
-      's': seconds,
-      
-      // // date
-      // 'd': String('00' + date).slice(-2),
-      // 'D': WEEK[day].substr(0, 3),
-      // 'j': date,
-      // 'l': WEEK[day],
-      
-      // // month
-      // 'm': String('00' + (month+1)).slice(-2),
-      // 'M': MONTH[month].substr(0, 3),
-      // 'n': (month+1),
-      // 'F': MONTH[month],
-      
-      // // year
-      // 'y': year.toString().substr(2, 2),
-      // 'Y': year,
-      
-      // // time
-      // 'G': hours,
-      // 'H': String('00' + hours).slice(-2),
-      // 'i': String('00' + minutes).slice(-2),
-      // 's': String('00' + seconds).slice(-2),
-      // 'S': String('000' + millseconds).slice(-3),
-    };
-
-    var regstr = '(' + Object.keys(patterns).join('|') + ')';
-    var re = new RegExp(regstr, 'g');
-
-    return pattern.replace(re, function(str) {
-      return patterns[str];
-    });
-  });
-
-
-  /**
-   * @method calculateAge
-   * @static
-   * 指定した誕生日から、現在または指定した日付における年齢を計算します。
-   *
-   * ###Reference
-   * - [Javascriptで誕生日から現在の年齢を算出](http://qiita.com/n0bisuke/items/dd537bd4cbe9ab501ce8)
-   *
-   * ### Example
-   *     Date.calculateAge("1990-01-17"); // => 26 など
-   *
-   * @param {String/Date} birthday 誕生日
-   * @param {String/Date} [when=本日] 基準の日付
-   * @return {Number} 年齢
-   */
-  Date.$method('calculateAge', function(birthday, when) {
-    // birthday
-    if (typeof birthday === 'string') {
-      birthday = new Date(birthday);
-    }
-    // when
-    if (!when) {
-      when = new Date();
-    }
-    else if (typeof when === 'string') {
-      when = new Date(when);
-    }
-
-    var bn = new Date(birthday.getTime()).setFullYear(256);
-    var wn = new Date(when.getTime()).setFullYear(256);
-    var step = (wn < bn) ? 1 : 0;
-
-    return (when.getFullYear() - birthday.getFullYear()) - step;
-  });
-  
-})();
-
-/*
- * math.js
- */
-
-;(function() {
-    
-  /**
-   * @class global.Math
-   * # 拡張した Math クラス
-   * 数学的な処理を扱う Math クラスを拡張しています。
-   */
-
-  
-  /**
-   * @property DEG_TO_RAD
-   * 度をラジアンに変換するための定数です。
-   */
-  Math.DEG_TO_RAD = Math.PI/180;
-  
-  /**
-   * @property RAD_TO_DEG
-   * ラジアンを度に変換するための定数です。
-   */
-  Math.RAD_TO_DEG = 180/Math.PI;
-  
-  /**
-   * @property PHI
-   * 黄金比です。
-   */
-  Math.PHI = (1 + Math.sqrt(5)) / 2;
-  
-  /**
-   * @static
-   * @method degToRad
-   * 度をラジアンに変換します。
-   *
-   * ### Example
-   *     Math.degToRad(180); // => 3.141592653589793
-   *
-   * @param {Number} deg 度
-   * @return {Number} ラジアン
-   */
-  Math.degToRad = function(deg) {
-    return deg * Math.DEG_TO_RAD;
-  };
-  
-  /**
-   * @static
-   * @method radToDeg
-   * ラジアンを度に変換します。
-   *
-   * ### Example
-   *     Math.radToDeg(Math.PI/4); // => 45
-   *
-   * @param {Number} rad ラジアン
-   * @return {Number} 度
-   */
-  Math.radToDeg = function(rad) {
-    return rad * Math.RAD_TO_DEG;
-  };
-  
-
-  
-  /**
-   * @static
-   * @method clamp
-   * 指定した値を指定した範囲に収めた結果を返します。
-   *
-   * ### Example
-   *     Math.clamp(120, 0, 640); // => 120
-   *     Math.clamp(980, 0, 640); // => 640
-   *     Math.clamp(-80, 0, 640); // => 0
-   *
-   * @param {Number} value 値
-   * @param {Number} min  範囲の下限
-   * @param {Number} max  範囲の上限
-   * @return {Number} 丸めた結果の値
-   */
-  Math.$method("clamp", function(value, min, max) {
-    return (value < min) ? min : ( (value > max) ? max : value );
-  });
-  
-  /**
-   * @static
-   * @method inside
-   * 指定した値が指定した値の範囲にあるかどうかを返します。
-   *
-   * ### Example
-   *     Math.inside(980, 0, 640); // => false
-   *     Math.inside(120, 0, 640); // => true
-   *
-   * @param {Number} value チェックする値
-   * @param {Number} min  範囲の下限
-   * @param {Number} max  範囲の上限
-   * @return {Boolean} 範囲内に値があるかないか
-   */
-  Math.$method("inside", function(value, min, max) {
-    return (value >= min) && (value) <= max;
-  });
-  
-  /**
-   * @static
-   * @method randint
-   * 指定された範囲内でランダムな整数値を生成します。
-   *
-   * ### Example
-   *     Math.randint(-4, 4); // => -4、0、3、4 など
-   *
-   * @param {Number} min  範囲の最小値
-   * @param {Number} max  範囲の最大値
-   * @return {Number} ランダムな整数値
-   */
-  Math.$method("randint", function(min, max) {
-    return Math.floor( Math.random()*(max-min+1) ) + min;
-  });
-  
-  /**
-   * @static
-   * @method randfloat
-   * 指定された範囲内でランダムな数値を生成します。
-   *
-   * ### Example
-   *     Math.randfloat(-4, 4); // => -2.7489193824000937 など
-   *
-   * @param {Number} min  範囲の最小値
-   * @param {Number} max  範囲の最大値
-   * @return {Number} ランダムな数値
-   */
-  Math.$method("randfloat", function(min, max) {
-    return Math.random()*(max-min)+min;
-  });
-
-  /**
-   * @static
-   * @method randbool
-   * ランダムに真偽値を生成します。
-   * 引数で百分率を指定する事もできます。
-   *
-   * ### Example
-   *     Math.randbool();   // => true または false
-   *     Math.randbool(80); // => 80% の確率で true
-   *
-   * @param {Number} percent  真になる百分率
-   * @return {Boolean} ランダムな真偽値
-   */
-  Math.$method("randbool", function(perecent) {
-    return Math.randint(0, 100) < (perecent || 50);
-  });
-    
-})();
 /*
  *
  */
@@ -4115,591 +3958,6 @@ phina.namespace(function() {
 
   });
 
-});
-
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.asset.Sound
-   * 
-   */
-  phina.define('phina.asset.Sound', {
-    superClass: "phina.asset.Asset",
-    
-    _loop: false,
-    _loopStart: 0,
-    _loopEnd: 0,
-    _playbackRate: 1,
-    
-    /**
-     * @constructor
-     */
-    init: function() {
-      this.superInit();
-      this.context = phina.asset.Sound.getAudioContext();
-      this.gainNode = this.context.createGain();
-    },
-
-    play: function(when, offset, duration) {
-      when = when ? when + this.context.currentTime : 0;
-      offset = offset || 0;
-
-      if (this.source) {
-        // TODO: キャッシュする？
-      }
-
-      var source = this.source = this.context.createBufferSource();
-      var buffer = source.buffer = this.buffer;
-      source.loop = this._loop;
-      source.loopStart = this._loopStart;
-      source.loopEnd = this._loopEnd;
-      source.playbackRate.value = this._playbackRate;
-
-      // connect
-      source.connect(this.gainNode);
-      this.gainNode.connect(phina.asset.Sound.getMasterGain());
-      // play
-      if (duration !== undefined) {
-        source.start(when, offset, duration);
-      }
-      else {
-        source.start(when, offset);
-      }
-      
-      // check play end
-      source.addEventListener('ended', function(){
-        this.flare('ended');
-      }.bind(this));
-
-      return this;
-    },
-
-    stop: function() {
-      // stop
-      if (this.source) {
-        // stop すると source.endedも発火する
-        this.source.stop && this.source.stop(0);
-        this.source = null;
-        this.flare('stop');
-      }
-
-      return this;
-    },
-
-    pause: function() {
-      this.source.playbackRate.value = 0;
-      this.flare('pause');
-      return this;
-    },
-
-    resume: function() {
-      this.source.playbackRate.value = this._playbackRate;
-      this.flare('resume');
-      return this;
-    },
-
-    // 試してみるなう
-    _oscillator: function(type) {
-      var context = this.context;
-
-      var oscillator = context.createOscillator();
-
-      // Sine wave is type = “sine”
-      // Square wave is type = “square”
-      // Sawtooth wave is type = “saw”
-      // Triangle wave is type = “triangle”
-      // Custom wave is type = “custom” 
-      oscillator.type = type || 'sine';
-
-      this.source = oscillator;
-      // connect
-      this.source.connect(context.destination);
-    },
-
-    loadFromBuffer: function(buffer) {
-      var context = this.context;
-
-      // set default buffer
-      if (!buffer) {
-        buffer = context.createBuffer( 1, 44100, 44100 );
-        var channel = buffer.getChannelData(0);
-
-        for( var i=0; i < channel.length; i++ )
-        {
-          channel[i] = Math.sin( i / 100 * Math.PI);
-        }
-      }
-
-      // source
-      this.buffer = buffer;
-    },
-
-    setLoop: function(loop) {
-      this.loop = loop;
-      return this;
-    },
-    setLoopStart: function(loopStart) {
-      this.loopStart = loopStart;
-      return this;
-    },
-    setLoopEnd: function(loopEnd) {
-      this.loopEnd = loopEnd;
-      return this;
-    },
-    
-    setPlaybackRate: function(playbackRate) {
-      this.playbackRate = playbackRate;
-      return this;
-    },
-
-    _load: function(r) {
-      if (/^data:/.test(this.src)) {
-        this._loadFromURIScheme(r);
-      }
-      else {
-        this._loadFromFile(r);
-      }
-    },
-
-    _loadFromFile: function(r) {
-      var self = this;
-
-      var xml = new XMLHttpRequest();
-      xml.open('GET', this.src);
-      xml.onreadystatechange = function() {
-        if (xml.readyState === 4) {
-          if ([200, 201, 0].indexOf(xml.status) !== -1) {
-
-            // 音楽バイナリーデータ
-            var data = xml.response;
-
-            // webaudio 用に変換
-            self.context.decodeAudioData(data, function(buffer) {
-              self.loadFromBuffer(buffer);
-              r(self);
-            }, function() {
-              console.warn("音声ファイルのデコードに失敗しました。(" + self.src + ")");
-              r(self);
-              self.flare('decodeerror');
-            });
-
-          } else if (xml.status === 404) {
-            // not found
-
-            self.loadError = true;
-            self.notFound= true;
-            r(self);
-            self.flare('loaderror');
-            self.flare('notfound');
-
-          } else {
-            // サーバーエラー
-
-            self.loadError = true;
-            self.serverError = true;
-            r(self);
-            self.flare('loaderror');
-            self.flare('servererror');
-          }
-        }
-      };
-
-      xml.responseType = 'arraybuffer';
-
-      xml.send(null);
-    },
-
-    _loadFromURIScheme: function(r) {
-      var byteString = '';
-      if (this.src.split(',')[0].indexOf('base64') >= 0) {
-        byteString = atob(this.src.split(',')[1]);
-      }
-      else {
-        byteString = unescape(this.src.split(',')[1]);
-      }
-
-      var self = this;
-      var len = byteString.length;
-      var buffer = new Uint8Array(len);
-
-      for (var i=0; i<len; ++i) {
-        buffer[i] = byteString.charCodeAt(i);
-      }
-
-      // webaudio 用に変換
-      this.context.decodeAudioData(buffer.buffer, function(buffer) {
-        self.loadFromBuffer(buffer);
-        r(self);
-      }, function() {
-        console.warn("音声ファイルのデコードに失敗しました。(" + self.src + ")");
-        self.loaded = true;
-        r(self);
-      });
-    },
-
-    loadDummy: function() {
-      this.loadFromBuffer();
-    },
-
-    _accessor: {
-      volume: {
-        get: function()  { return this.gainNode.gain.value; },
-        set: function(v) { this.gainNode.gain.value = v; },
-      },
-      loop: {
-        get: function()  { return this._loop; },
-        set: function(v) {
-          this._loop = v;
-          if (this.source) this.source._loop = v;
-        },
-      },
-      loopStart: {
-        get: function()  { return this._loopStart; },
-        set: function(v) {
-          this._loopStart = v;
-          if (this.source) this.source._loopStart = v;
-        },
-      },
-      loopEnd: {
-        get: function()  { return this._loopEnd; },
-        set: function(v) {
-          this._loopEnd = v;
-          if (this.source) this.source._loopEnd = v;
-        },
-      },
-      playbackRate: {
-        get: function() { return this._playbackRate; },
-        set: function(v) {
-          this._playbackRate = v;
-          if(this.source && this.source.playbackRate.value !== 0){
-            this.source.playbackRate.value = v;
-          }
-        },
-      }
-    },
-
-    _defined: function() {
-      this.accessor('volume', {
-        get: function() {
-          return this.getMasterGain().gain.value;
-        },
-        set: function(v) {
-          this.getMasterGain().gain.value = v;
-        },
-      });
-      
-    },
-    
-    _static: {
-      
-      getMasterGain: function() {
-        if(!this._masterGain) {
-          var context = this.getAudioContext();
-          this._masterGain = context.createGain();
-          this._masterGain.connect(context.destination);
-        }
-        return this._masterGain;
-      },
-      
-      getAudioContext: function() {
-        if (!phina.util.Support.webAudio) return null;
-
-        if (this.context) return this.context;
-
-        var g = phina.global;
-        var context = null;
-
-        if (g.AudioContext) {
-          context = new AudioContext();
-        }
-        else if (g.webkitAudioContext) {
-          context = new webkitAudioContext();
-        }
-        else if (g.mozAudioContext) {
-          context = new mozAudioContext();
-        }
-
-        this.context = context;
-
-        return context;
-      },
-    },
-
-  });
-
-});
-
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.asset.SpriteSheet
-   * 
-   */
-  phina.define('phina.asset.SpriteSheet', {
-    superClass: "phina.asset.Asset",
-
-    /**
-     * @constructor
-     */
-    init: function() {
-      this.superInit();
-    },
-
-    setup: function(params) {
-      this._setupFrame(params.frame);
-      this._setupAnim(params.animations);
-      return this;
-    },
-
-    _load: function(resolve) {
-
-      var self = this;
-
-      if (typeof this.src === 'string') {
-        var xml = new XMLHttpRequest();
-        xml.open('GET', this.src);
-        xml.onreadystatechange = function() {
-          if (xml.readyState === 4) {
-            if ([200, 201, 0].indexOf(xml.status) !== -1) {
-              var data = xml.responseText;
-              var json = JSON.parse(data);
-
-              self.setup(json);
-
-              resolve(self);
-            }
-          }
-        };
-
-        xml.send(null);
-      }
-      else {
-        this.setup(this.src);
-        resolve(self);
-      }
-
-    },
-
-    _setupFrame: function(frame) {
-      var frames = this.frames = [];
-      var unitWidth = frame.width;
-      var unitHeight = frame.height;
-
-      var count = frame.rows * frame.cols;
-      this.frame = count;
-
-      (count).times(function(i) {
-        var xIndex = i%frame.cols;
-        var yIndex = (i/frame.cols)|0;
-
-        frames.push({
-          x: xIndex*unitWidth,
-          y: yIndex*unitHeight,
-          width: unitWidth,
-          height: unitHeight,
-        });
-      });
-    },
-
-    _setupAnim: function(animations) {
-      this.animations = {};
-
-      // デフォルトアニメーション
-      this.animations["default"] = {
-          frames: [].range(0, this.frame),
-          next: "default",
-          frequency: 1,
-      };
-
-      animations.forIn(function(key, value) {
-        var anim = value;
-
-        if (anim instanceof Array) {
-          this.animations[key] = {
-            frames: [].range(anim[0], anim[1]),
-            next: anim[2],
-            frequency: anim[3] || 1,
-          };
-        }
-        else {
-          this.animations[key] = {
-            frames: anim.frames,
-            next: anim.next,
-            frequency: anim.frequency || 1
-          };
-        }
-
-      }, this);
-    },
-
-    /**
-     * フレームを取得
-     */
-    getFrame: function(index) {
-      return this.frames[index];
-    },
-
-    getAnimation: function(name) {
-      name = (name !== undefined) ? name : "default";
-      return this.animations[name];
-    },
-
-  });
-
-});
-
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.asset.Script
-   * 
-   */
-  phina.define('phina.asset.Script', {
-    superClass: "phina.asset.Asset",
-
-    /**
-     * @constructor
-     */
-    init: function() {
-      this.superInit();
-    },
-
-    _load: function(resolve) {
-      var self = this;
-      this.domElement = document.createElement('script');
-      this.domElement.src = this.src;
-
-      this.domElement.onload = function() {
-        resolve(self);
-      }.bind(this);
-
-      document.body.appendChild(this.domElement);
-    },
-
-  });
-
-});
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.asset.Font
-   * 
-   */
-  phina.define("phina.asset.Font", {
-    superClass: "phina.asset.Asset",
-
-    /**
-     * @constructor
-     */
-    init: function() {
-      this.superInit();
-      this.fontName = null;
-    },
-
-    load: function(path) {
-      this.src = path;
-
-      var reg = /(.*)(?:\.([^.]+$))/;
-      var key = this.fontName || path.match(reg)[1].split('/').last;    //フォント名指定が無い場合はpathの拡張子前を使用
-      var type = path.match(reg)[2];
-      var format = "unknown";
-      switch (type) {
-        case "ttf":
-          format = "truetype"; break;
-        case "otf":
-          format = "opentype"; break;
-        case "woff":
-          format = "woff"; break;
-        case "woff2":
-          format = "woff2"; break;
-        default:
-          console.warn("サポートしていないフォント形式です。(" + path + ")");
-      }
-      this.format = format;
-      this.fontName = key;
-
-      if (format !== "unknown") {
-        var text = "@font-face { font-family: '{0}'; src: url({1}) format('{2}'); }".format(key, path, format);
-        var e = document.querySelector("head");
-        var fontFaceStyleElement = document.createElement("style");
-        if (fontFaceStyleElement.innerText) {
-          fontFaceStyleElement.innerText = text;
-        } else {
-          fontFaceStyleElement.textContent = text;
-        }
-        e.appendChild(fontFaceStyleElement);
-      }
-
-      return phina.util.Flow(this._load.bind(this));
-    },
-
-    _load: function(resolve) {
-      if (this.format !== "unknown") {
-        this._checkLoaded(this.fontName, function() {
-          this.loaded = true;
-          resolve(this);
-        }.bind(this));
-      } else {
-        this.loaded = true;
-        resolve(this);
-      }
-    },
-
-    _checkLoaded: function (font, callback) {
-      var canvas = phina.graphics.Canvas();
-      var DEFAULT_FONT = canvas.context.font.split(' ')[1];
-      canvas.context.font = '40px ' + DEFAULT_FONT;
-
-      var checkText = "1234567890-^\\qwertyuiop@[asdfghjkl;:]zxcvbnm,./\!\"#$%&'()=~|QWERTYUIOP`{ASDFGHJKL+*}ZXCVBNM<>?_１２３４５６７８９０－＾￥ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍ，．あいうかさたなをん時は金なり";
-      // 特殊文字対応
-      checkText += String.fromCharCode("0xf04b");
-
-      var before = canvas.context.measureText(checkText).width;
-      canvas.context.font = '40px ' + font + ', ' + DEFAULT_FONT;
-
-      var timeoutCount = 30;
-      var checkLoadFont = function () {
-        var after = canvas.context.measureText(checkText).width;
-        if (after !== before) {
-          setTimeout(function() {
-            callback && callback();
-          }, 100);
-        } else {
-          if (--timeoutCount > 0) {
-            setTimeout(checkLoadFont, 100);
-          }
-          else {
-            callback && callback();
-            console.warn("timeout font loading");
-          }
-        }
-      };
-      checkLoadFont();
-    },
-
-    setFontName: function(name) {
-      if (this.loaded) {
-        console.warn("フォント名はLoad前にのみ設定が出来ます(" + name + ")");
-        return this;
-      }
-      this.fontName = name;
-      
-      return this;
-    },
-
-    getFontName: function() {
-      return this.fontName;
-    },
-
-  });
 });
 
 
@@ -8800,7 +8058,7 @@ phina.namespace(function() {
     },
   });
 
-
+  
 });
 
 
@@ -10763,6 +10021,591 @@ phina.namespace(function() {
 
 });
 
+
+
+phina.namespace(function() {
+
+  /**
+   * @class phina.asset.Sound
+   * 
+   */
+  phina.define('phina.asset.Sound', {
+    superClass: "phina.asset.Asset",
+    
+    _loop: false,
+    _loopStart: 0,
+    _loopEnd: 0,
+    _playbackRate: 1,
+    
+    /**
+     * @constructor
+     */
+    init: function() {
+      this.superInit();
+      this.context = phina.asset.Sound.getAudioContext();
+      this.gainNode = this.context.createGain();
+    },
+
+    play: function(when, offset, duration) {
+      when = when ? when + this.context.currentTime : 0;
+      offset = offset || 0;
+
+      if (this.source) {
+        // TODO: キャッシュする？
+      }
+
+      var source = this.source = this.context.createBufferSource();
+      var buffer = source.buffer = this.buffer;
+      source.loop = this._loop;
+      source.loopStart = this._loopStart;
+      source.loopEnd = this._loopEnd;
+      source.playbackRate.value = this._playbackRate;
+
+      // connect
+      source.connect(this.gainNode);
+      this.gainNode.connect(phina.asset.Sound.getMasterGain());
+      // play
+      if (duration !== undefined) {
+        source.start(when, offset, duration);
+      }
+      else {
+        source.start(when, offset);
+      }
+      
+      // check play end
+      source.addEventListener('ended', function(){
+        this.flare('ended');
+      }.bind(this));
+
+      return this;
+    },
+
+    stop: function() {
+      // stop
+      if (this.source) {
+        // stop すると source.endedも発火する
+        this.source.stop && this.source.stop(0);
+        this.source = null;
+        this.flare('stop');
+      }
+
+      return this;
+    },
+
+    pause: function() {
+      this.source.playbackRate.value = 0;
+      this.flare('pause');
+      return this;
+    },
+
+    resume: function() {
+      this.source.playbackRate.value = this._playbackRate;
+      this.flare('resume');
+      return this;
+    },
+
+    // 試してみるなう
+    _oscillator: function(type) {
+      var context = this.context;
+
+      var oscillator = context.createOscillator();
+
+      // Sine wave is type = “sine”
+      // Square wave is type = “square”
+      // Sawtooth wave is type = “saw”
+      // Triangle wave is type = “triangle”
+      // Custom wave is type = “custom” 
+      oscillator.type = type || 'sine';
+
+      this.source = oscillator;
+      // connect
+      this.source.connect(context.destination);
+    },
+
+    loadFromBuffer: function(buffer) {
+      var context = this.context;
+
+      // set default buffer
+      if (!buffer) {
+        buffer = context.createBuffer( 1, 44100, 44100 );
+        var channel = buffer.getChannelData(0);
+
+        for( var i=0; i < channel.length; i++ )
+        {
+          channel[i] = Math.sin( i / 100 * Math.PI);
+        }
+      }
+
+      // source
+      this.buffer = buffer;
+    },
+
+    setLoop: function(loop) {
+      this.loop = loop;
+      return this;
+    },
+    setLoopStart: function(loopStart) {
+      this.loopStart = loopStart;
+      return this;
+    },
+    setLoopEnd: function(loopEnd) {
+      this.loopEnd = loopEnd;
+      return this;
+    },
+    
+    setPlaybackRate: function(playbackRate) {
+      this.playbackRate = playbackRate;
+      return this;
+    },
+
+    _load: function(r) {
+      if (/^data:/.test(this.src)) {
+        this._loadFromURIScheme(r);
+      }
+      else {
+        this._loadFromFile(r);
+      }
+    },
+
+    _loadFromFile: function(r) {
+      var self = this;
+
+      var xml = new XMLHttpRequest();
+      xml.open('GET', this.src);
+      xml.onreadystatechange = function() {
+        if (xml.readyState === 4) {
+          if ([200, 201, 0].indexOf(xml.status) !== -1) {
+
+            // 音楽バイナリーデータ
+            var data = xml.response;
+
+            // webaudio 用に変換
+            self.context.decodeAudioData(data, function(buffer) {
+              self.loadFromBuffer(buffer);
+              r(self);
+            }, function() {
+              console.warn("音声ファイルのデコードに失敗しました。(" + self.src + ")");
+              r(self);
+              self.flare('decodeerror');
+            });
+
+          } else if (xml.status === 404) {
+            // not found
+
+            self.loadError = true;
+            self.notFound= true;
+            r(self);
+            self.flare('loaderror');
+            self.flare('notfound');
+
+          } else {
+            // サーバーエラー
+
+            self.loadError = true;
+            self.serverError = true;
+            r(self);
+            self.flare('loaderror');
+            self.flare('servererror');
+          }
+        }
+      };
+
+      xml.responseType = 'arraybuffer';
+
+      xml.send(null);
+    },
+
+    _loadFromURIScheme: function(r) {
+      var byteString = '';
+      if (this.src.split(',')[0].indexOf('base64') >= 0) {
+        byteString = atob(this.src.split(',')[1]);
+      }
+      else {
+        byteString = unescape(this.src.split(',')[1]);
+      }
+
+      var self = this;
+      var len = byteString.length;
+      var buffer = new Uint8Array(len);
+
+      for (var i=0; i<len; ++i) {
+        buffer[i] = byteString.charCodeAt(i);
+      }
+
+      // webaudio 用に変換
+      this.context.decodeAudioData(buffer.buffer, function(buffer) {
+        self.loadFromBuffer(buffer);
+        r(self);
+      }, function() {
+        console.warn("音声ファイルのデコードに失敗しました。(" + self.src + ")");
+        self.loaded = true;
+        r(self);
+      });
+    },
+
+    loadDummy: function() {
+      this.loadFromBuffer();
+    },
+
+    _accessor: {
+      volume: {
+        get: function()  { return this.gainNode.gain.value; },
+        set: function(v) { this.gainNode.gain.value = v; },
+      },
+      loop: {
+        get: function()  { return this._loop; },
+        set: function(v) {
+          this._loop = v;
+          if (this.source) this.source._loop = v;
+        },
+      },
+      loopStart: {
+        get: function()  { return this._loopStart; },
+        set: function(v) {
+          this._loopStart = v;
+          if (this.source) this.source._loopStart = v;
+        },
+      },
+      loopEnd: {
+        get: function()  { return this._loopEnd; },
+        set: function(v) {
+          this._loopEnd = v;
+          if (this.source) this.source._loopEnd = v;
+        },
+      },
+      playbackRate: {
+        get: function() { return this._playbackRate; },
+        set: function(v) {
+          this._playbackRate = v;
+          if(this.source && this.source.playbackRate.value !== 0){
+            this.source.playbackRate.value = v;
+          }
+        },
+      }
+    },
+
+    _defined: function() {
+      this.accessor('volume', {
+        get: function() {
+          return this.getMasterGain().gain.value;
+        },
+        set: function(v) {
+          this.getMasterGain().gain.value = v;
+        },
+      });
+      
+    },
+    
+    _static: {
+      
+      getMasterGain: function() {
+        if(!this._masterGain) {
+          var context = this.getAudioContext();
+          this._masterGain = context.createGain();
+          this._masterGain.connect(context.destination);
+        }
+        return this._masterGain;
+      },
+      
+      getAudioContext: function() {
+        if (!phina.util.Support.webAudio) return null;
+
+        if (this.context) return this.context;
+
+        var g = phina.global;
+        var context = null;
+
+        if (g.AudioContext) {
+          context = new AudioContext();
+        }
+        else if (g.webkitAudioContext) {
+          context = new webkitAudioContext();
+        }
+        else if (g.mozAudioContext) {
+          context = new mozAudioContext();
+        }
+
+        this.context = context;
+
+        return context;
+      },
+    },
+
+  });
+
+});
+
+
+
+phina.namespace(function() {
+
+  /**
+   * @class phina.asset.SpriteSheet
+   * 
+   */
+  phina.define('phina.asset.SpriteSheet', {
+    superClass: "phina.asset.Asset",
+
+    /**
+     * @constructor
+     */
+    init: function() {
+      this.superInit();
+    },
+
+    setup: function(params) {
+      this._setupFrame(params.frame);
+      this._setupAnim(params.animations);
+      return this;
+    },
+
+    _load: function(resolve) {
+
+      var self = this;
+
+      if (typeof this.src === 'string') {
+        var xml = new XMLHttpRequest();
+        xml.open('GET', this.src);
+        xml.onreadystatechange = function() {
+          if (xml.readyState === 4) {
+            if ([200, 201, 0].indexOf(xml.status) !== -1) {
+              var data = xml.responseText;
+              var json = JSON.parse(data);
+
+              self.setup(json);
+
+              resolve(self);
+            }
+          }
+        };
+
+        xml.send(null);
+      }
+      else {
+        this.setup(this.src);
+        resolve(self);
+      }
+
+    },
+
+    _setupFrame: function(frame) {
+      var frames = this.frames = [];
+      var unitWidth = frame.width;
+      var unitHeight = frame.height;
+
+      var count = frame.rows * frame.cols;
+      this.frame = count;
+
+      (count).times(function(i) {
+        var xIndex = i%frame.cols;
+        var yIndex = (i/frame.cols)|0;
+
+        frames.push({
+          x: xIndex*unitWidth,
+          y: yIndex*unitHeight,
+          width: unitWidth,
+          height: unitHeight,
+        });
+      });
+    },
+
+    _setupAnim: function(animations) {
+      this.animations = {};
+
+      // デフォルトアニメーション
+      this.animations["default"] = {
+          frames: [].range(0, this.frame),
+          next: "default",
+          frequency: 1,
+      };
+
+      animations.forIn(function(key, value) {
+        var anim = value;
+
+        if (anim instanceof Array) {
+          this.animations[key] = {
+            frames: [].range(anim[0], anim[1]),
+            next: anim[2],
+            frequency: anim[3] || 1,
+          };
+        }
+        else {
+          this.animations[key] = {
+            frames: anim.frames,
+            next: anim.next,
+            frequency: anim.frequency || 1
+          };
+        }
+
+      }, this);
+    },
+
+    /**
+     * フレームを取得
+     */
+    getFrame: function(index) {
+      return this.frames[index];
+    },
+
+    getAnimation: function(name) {
+      name = (name !== undefined) ? name : "default";
+      return this.animations[name];
+    },
+
+  });
+
+});
+
+
+
+phina.namespace(function() {
+
+  /**
+   * @class phina.asset.Script
+   * 
+   */
+  phina.define('phina.asset.Script', {
+    superClass: "phina.asset.Asset",
+
+    /**
+     * @constructor
+     */
+    init: function() {
+      this.superInit();
+    },
+
+    _load: function(resolve) {
+      var self = this;
+      this.domElement = document.createElement('script');
+      this.domElement.src = this.src;
+
+      this.domElement.onload = function() {
+        resolve(self);
+      }.bind(this);
+
+      document.body.appendChild(this.domElement);
+    },
+
+  });
+
+});
+
+
+phina.namespace(function() {
+
+  /**
+   * @class phina.asset.Font
+   * 
+   */
+  phina.define("phina.asset.Font", {
+    superClass: "phina.asset.Asset",
+
+    /**
+     * @constructor
+     */
+    init: function() {
+      this.superInit();
+      this.fontName = null;
+    },
+
+    load: function(path) {
+      this.src = path;
+
+      var reg = /(.*)(?:\.([^.]+$))/;
+      var key = this.fontName || path.match(reg)[1].split('/').last;    //フォント名指定が無い場合はpathの拡張子前を使用
+      var type = path.match(reg)[2];
+      var format = "unknown";
+      switch (type) {
+        case "ttf":
+          format = "truetype"; break;
+        case "otf":
+          format = "opentype"; break;
+        case "woff":
+          format = "woff"; break;
+        case "woff2":
+          format = "woff2"; break;
+        default:
+          console.warn("サポートしていないフォント形式です。(" + path + ")");
+      }
+      this.format = format;
+      this.fontName = key;
+
+      if (format !== "unknown") {
+        var text = "@font-face { font-family: '{0}'; src: url({1}) format('{2}'); }".format(key, path, format);
+        var e = document.querySelector("head");
+        var fontFaceStyleElement = document.createElement("style");
+        if (fontFaceStyleElement.innerText) {
+          fontFaceStyleElement.innerText = text;
+        } else {
+          fontFaceStyleElement.textContent = text;
+        }
+        e.appendChild(fontFaceStyleElement);
+      }
+
+      return phina.util.Flow(this._load.bind(this));
+    },
+
+    _load: function(resolve) {
+      if (this.format !== "unknown") {
+        this._checkLoaded(this.fontName, function() {
+          this.loaded = true;
+          resolve(this);
+        }.bind(this));
+      } else {
+        this.loaded = true;
+        resolve(this);
+      }
+    },
+
+    _checkLoaded: function (font, callback) {
+      var canvas = phina.graphics.Canvas();
+      var DEFAULT_FONT = canvas.context.font.split(' ')[1];
+      canvas.context.font = '40px ' + DEFAULT_FONT;
+
+      var checkText = "1234567890-^\\qwertyuiop@[asdfghjkl;:]zxcvbnm,./\!\"#$%&'()=~|QWERTYUIOP`{ASDFGHJKL+*}ZXCVBNM<>?_１２３４５６７８９０－＾￥ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍ，．あいうかさたなをん時は金なり";
+      // 特殊文字対応
+      checkText += String.fromCharCode("0xf04b");
+
+      var before = canvas.context.measureText(checkText).width;
+      canvas.context.font = '40px ' + font + ', ' + DEFAULT_FONT;
+
+      var timeoutCount = 30;
+      var checkLoadFont = function () {
+        var after = canvas.context.measureText(checkText).width;
+        if (after !== before) {
+          setTimeout(function() {
+            callback && callback();
+          }, 100);
+        } else {
+          if (--timeoutCount > 0) {
+            setTimeout(checkLoadFont, 100);
+          }
+          else {
+            callback && callback();
+            console.warn("timeout font loading");
+          }
+        }
+      };
+      checkLoadFont();
+    },
+
+    setFontName: function(name) {
+      if (this.loaded) {
+        console.warn("フォント名はLoad前にのみ設定が出来ます(" + name + ")");
+        return this;
+      }
+      this.fontName = name;
+      
+      return this;
+    },
+
+    getFontName: function() {
+      return this.fontName;
+    },
+
+  });
+});
+
 /*
  * LoadingScene
  */
@@ -10840,147 +10683,6 @@ phina.namespace(function() {
       },
     },
 
-  });
-
-});
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.display.Sprite
-   * 
-   */
-  phina.define('phina.display.Sprite', {
-    superClass: 'phina.display.DisplayElement',
-
-    init: function(image, width, height) {
-      this.superInit();
-
-      this.srcRect = phina.geom.Rect();
-      this.setImage(image, width, height);
-    },
-
-    draw: function(canvas) {
-      var image = this.image.domElement;
-
-      // canvas.context.drawImage(image,
-      //   0, 0, image.width, image.height,
-      //   -this.width*this.origin.x, -this.height*this.origin.y, this.width, this.height
-      //   );
-
-      var srcRect = this.srcRect;
-      canvas.context.drawImage(image,
-        srcRect.x, srcRect.y, srcRect.width, srcRect.height,
-        -this._width*this.originX, -this._height*this.originY, this._width, this._height
-        );
-    },
-
-    setImage: function(image, width, height) {
-      if (typeof image === 'string') {
-        image = phina.asset.AssetManager.get('image', image);
-      }
-      this._image = image;
-      this.width = this._image.domElement.width;
-      this.height = this._image.domElement.height;
-
-      if (width) { this.width = width; }
-      if (height) { this.height = height; }
-
-      this.frameIndex = 0;
-
-      return this;
-    },
-
-    setFrameIndex: function(index, width, height) {
-      var tw  = width || this._width;      // tw
-      var th  = height || this._height;    // th
-      var row = ~~(this.image.domElement.width / tw);
-      var col = ~~(this.image.domElement.height / th);
-      var maxIndex = row*col;
-      index = index%maxIndex;
-      
-      var x = index%row;
-      var y = ~~(index/row);
-      this.srcRect.x = x*tw;
-      this.srcRect.y = y*th;
-      this.srcRect.width  = tw;
-      this.srcRect.height = th;
-
-      this._frameIndex = index;
-
-      return this;
-    },
-
-    _accessor: {
-      image: {
-        get: function() {return this._image;},
-        set: function(v) {
-          this.setImage(v);
-          return this;
-        }
-      },
-      frameIndex: {
-        get: function() {return this._frameIndex;},
-        set: function(idx) {
-          this.setFrameIndex(idx);
-          return this;
-        }
-      },
-    },
-  });
-
-});
-
-
-/*
- *
- */
-
-
-phina.namespace(function() {
-
-  /**
-   * @class phina.game.SplashScene
-   * 
-   */
-  phina.define('phina.game.SplashScene', {
-    superClass: 'phina.display.DisplayScene',
-
-    init: function(options) {
-      var defaults = phina.game.SplashScene.defaults;
-      this.superInit(options);
-
-      var texture = phina.asset.Texture();
-      texture.load(defaults.imageURL).then(function() {
-        this._init();
-      }.bind(this));
-      this.texture = texture;
-    },
-
-    _init: function() {
-      this.sprite = phina.display.Sprite(this.texture).addChildTo(this);
-
-      this.sprite.setPosition(this.gridX.center(), this.gridY.center());
-      this.sprite.alpha = 0;
-
-      this.sprite.tweener
-        .clear()
-        .to({alpha:1}, 500, 'easeOutCubic')
-        .wait(1000)
-        .to({alpha:0}, 500, 'easeOutCubic')
-        .wait(250)
-        .call(function() {
-          this.exit();
-        }, this)
-        ;
-    },
-
-    _static: {
-      defaults: {
-        imageURL: 'http://cdn.rawgit.com/phi-jp/phina.js/develop/logo.png',
-      },
-    },
   });
 
 });
